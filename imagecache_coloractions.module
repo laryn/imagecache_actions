@@ -211,7 +211,18 @@ function imagecache_gd_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
   #dpm("run imagefilter imagefilter($image->res, $filter, $arg1, $arg2, $arg3)");
 
   imagesavealpha($image->res, TRUE);
-  return imagefilter($image->res, $filter, $arg1, $arg2, $arg3);
+
+  # This is a bit silly really, php internals complain if it's given TOO MANY args!
+  # Should refactor this and not be so lazy.
+  if (!is_null($arg2) && !is_null($arg3)) {
+    return imagefilter($image->res, $filter, $arg1, $arg2, $arg3);
+  }
+  else if (!is_null($arg2) && is_null($arg3)) {
+    return imagefilter($image->res, $filter, $arg1, $arg2);
+  }
+  else if (is_null($arg2) && is_null($arg3)) {
+    return imagefilter($image->res, $filter, $arg1);
+  }
 }
 
 
