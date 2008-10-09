@@ -11,6 +11,8 @@
  * Note that the below code is laboriously slow - it takes and compares every pixel of the two inputs
  * and calculates a new valus for each of them. this is only a fallback because reliable image toolkit 
  * transparencies was buggy on certain platforms :(
+ * 
+ * DOES NOT WORK WELL on indexed color yet
  */
 
 //Niko (http://www.codeguru.com.ua)
@@ -32,7 +34,7 @@ class watermark {
     imagesavealpha($return_img, true);
     imagealphablending($return_img, false);
 
-		// Support indexed color (gif) if I have to
+    // Support indexed color (gif) if I have to
     $transparent_ix = imagecolortransparent($main_img_obj);
     if ($transparent_ix >= 0) {
       $transparent = imagecolorsforindex($main_img_obj, $transparent_ix);
@@ -72,9 +74,9 @@ class watermark {
         else {
           $return_color = imagecolorat($main_img_obj, $x, $y);
         }
-				if ($return_color == $transparent_ix) {
-				  $return_color = $transparent;
-				}
+        if ($return_color == $transparent_ix) {
+          $return_color = $transparent;
+        }
         imagesetpixel($return_img, $x, $y, $return_color);
       }
     }

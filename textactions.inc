@@ -231,7 +231,7 @@ function textactions_evaluate_text($image, $action) {
   $text = eval($action['text']);
   $text = check_plain($text);
 
-	return $text;
+  return $text;
 }
 
 
