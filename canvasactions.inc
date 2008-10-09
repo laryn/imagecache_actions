@@ -283,10 +283,14 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
  * @return a form definition
  */
 function canvasactions_file2canvas_form($action) {
+  // Provide a default just to make the UI faster.
+  $default = array('xpos' => 'right', 'ypos' => 'bottom', 'alpha' => '100',);
+  $action = array_merge($default, (array)$action);
+
   $form = array(
     'help' => array(
       '#type' => 'markup',
-      '#value' => t('Note that this action may require a lot of processing as transparency blends require that every pixel be re-calculated for each image. This can be a server-intensive process and generate a bit of load time.'),
+      '#value' => t('Note that using a transparent overlay that is larger than the source image may result in unwanted results - a solid background.'),
     ),
     'xpos' => array(
       '#type' => 'textfield',
@@ -307,7 +311,7 @@ function canvasactions_file2canvas_form($action) {
       '#title' => t('opacity'),
       '#default_value' => $action['alpha'],
       '#size' => 6,
-      '#description' => t('Opacity: 0-100.'),
+      '#description' => t('Opacity: 0-100. <b>Warning:</b> Due to a limitation in the GD toolkit, using an opacity other than 100% requires the system to use an algorithm that\'s much slower than the built-in functions. If you want partial transparency, you are better to use an already-transparent png as the overlay source image.'),
     ),
     'path' => array(
       '#type' => 'textfield',

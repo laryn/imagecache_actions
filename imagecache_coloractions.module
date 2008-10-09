@@ -70,6 +70,11 @@ function imagecache_coloractions_theme() {
  */
 function imagecache_colorshift_form($action) {
   $form = array('#theme' => 'imagecache_rgb_form');
+  
+  // Provide a default just to make the UI faster.
+  $default_rgb = array('HEX' => 'FF6633',);
+  $action['RGB'] = array_merge($default_rgb, (array)$action['RGB']);
+  
   $form['RGB'] = imagecache_rgb_form($action['RGB']);
   return $form;
 }

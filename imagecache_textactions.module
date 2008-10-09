@@ -16,7 +16,7 @@ require_once('utility.inc'); // For simple color routines
 function imagecache_textactions_imagecache_actions() {
   $actions = array(
     'textactions_text2canvas' => array(
-      'name' => t('Text: Static text.'),
+      'name' => t('Text'),
       'description' => t('Add static or dynamic (coded) text to an image.'),
       'file' => 'textactions.inc',
     ),
@@ -25,10 +25,11 @@ function imagecache_textactions_imagecache_actions() {
   return $actions;
 }
 
-function imagecache_textactions_install() {
-  cache_clear_all('imagecache_actions', 'cache');
-}
-
+/**
+ * Experimental diagnostic page to assist locating valid fonts on the system.
+ * Only tuned for Ubuntu so far. I've been unable do find ubiquitous tools that
+ * provide useful font listings.'
+ */
 function imagecache_textactions_help($path, $arg) {
   switch ($path) {
     case 'admin/help#imagecache_textactions':

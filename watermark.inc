@@ -31,6 +31,15 @@ class watermark {
     $return_img = imagecreatetruecolor($main_img_obj_w, $main_img_obj_h);
     imagesavealpha($return_img, true);
     imagealphablending($return_img, false);
+
+		// Support indexed color (gif) if I have to
+    $transparent_ix = imagecolortransparent($main_img_obj);
+    if ($transparent_ix >= 0) {
+      $transparent = imagecolorsforindex($main_img_obj, $transparent_ix);
+      // Allocate the values to the new image and get new color.
+      $transparent = imagecolorallocatealpha($return_img, $transparent['red'], $transparent['green'], $transparent['blue'], $transparent['alpha']);
+      imagecolortransparent($return_img, $transparent);
+    }
     
 
     for ($y = 0; $y < $main_img_obj_h; $y++) {
@@ -63,6 +72,9 @@ class watermark {
         else {
           $return_color = imagecolorat($main_img_obj, $x, $y);
         }
+				if ($return_color == $transparent_ix) {
+				  $return_color = $transparent;
+				}
         imagesetpixel($return_img, $x, $y, $return_color);
       }
     }

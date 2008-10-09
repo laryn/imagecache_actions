@@ -112,6 +112,14 @@ function imageapi_image_overlay(&$image, $overlay, $x, $y, $alpha) {
 /**
  * Place one image over another
  * This modifies the passed image by reference
+ * 
+ * This func is nominated for inclusion in imageapi package. Until then, we do
+ * it ourselves.
+ * 
+ * NOTE that the PHP libraries are not great at merging images SO we include a
+ * library that does it pixel-by-pixel which is INCREDIBLY inefficient. If this
+ * can be improved, in a way that supports all transparency, please let us know!
+ *
  *
  * @ingroup imageapi
  * @param $overlay may be a filename or an imageAPI object
@@ -128,6 +136,19 @@ function imageapi_gd_image_overlay(&$image, $overlay, $x, $y, $alpha) {
 
   $x_ins = _imagecache_keyword_filter($x, $image->info['width'], $overlay->info['width']);
   $y_ins = _imagecache_keyword_filter($y, $image->info['height'], $overlay->info['height']);
+
+	// If the given alpha is 100%, we can use imagecopy - which actually works, 
+	// Is more efficient, and seems to retain the overlays partial transparancy
+	if($alpha == 100) {
+	  imagealphablending($image->res, TRUE);
+	  imagesavealpha($image->res, TRUE);
+	  imagealphablending($overlay->res, TRUE);
+	  imagesavealpha($overlay->res, TRUE);
+	  imagecopy($image->res, $overlay->res, $x_ins, $y_ins, 0, 0, $overlay->info['width'], $overlay->info['height']);
+	  imagedestroy($overlay->res);
+	  return TRUE;
+	}
+	// else imagecopymerge fails and we have to use the slow library 
 
   // imagecopymerge doesn't do alpha transparency right?
   //imagealphablending($image->res, false);

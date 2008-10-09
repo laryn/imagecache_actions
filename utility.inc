@@ -13,6 +13,8 @@
 function imagecache_rgb_form($action) {
   if($action['HEX'] && $deduced = hex_to_rgb($action['HEX'])) {
     $action = array_merge($action, $deduced);
+    $action['HEX'] = ltrim($action['HEX'], '#');
+    // With or without # is valid, but trim for consistancy
   }
   $form = array('#theme' => 'canvasactions_rgb_form');
   $form['red'] = array( '#type' => 'textfield', '#title' => t('Red'), '#default_value' => $action['red'], '#size' => 3);
@@ -21,7 +23,9 @@ function imagecache_rgb_form($action) {
   $form['HEX'] = array( '#type' => 'textfield', '#title' => t('HEX'), '#default_value' => $action['HEX'], '#size' => 7);
 
   return $form;
+  # TODO add a color validation step here?
 }
+
 
 /**
  * Prepare a subform for displaying positioning fields

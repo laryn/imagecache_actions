@@ -8,14 +8,6 @@
  * Ported by dman
  * from http://drupal.org/node/264862#comment-865490 by patrickharris
  * 
- * TODO Needs review and clean up, this is a re-merge of branched code, may
- * contain duplicate stuff that should be combined.
- * 
- * Currently - The way the two methods calculate the bounding box/offset are
- * totally different.
- * 
- * The Settings form is largely duplicated
- * 
  * The bottom-20 positioning that dynamic text uses is good, and should be
  * worked back into other dimension calculations.
  * 
@@ -35,12 +27,13 @@ function textactions_text2canvas_form($action) {
   $defaults = array(
     'size' => 12,
     'angle' => 0,
-    'xpos' => left,
-    'ypos' => bottom,
+    'xpos' => 'left-10',
+    'ypos' => 'bottom-10',
     'RGB' => array(
-      'R' => 33,
-      'G' => 33,
-      'B' => 33,
+      'red' => 51,
+      'green' => 51,
+      'blue' => 51,
+      'HEX' => '#333333',
     ),
     'fontfile' => 'MgOpenModernaBold.ttf',
     'text' => 'Hello World!',
@@ -329,6 +322,12 @@ function imageapi_image_overlaytext_alpha(&$image, $text, $size = 12, $x = 0, $y
  */
 function imageapi_gd_image_overlaytext_alpha(&$image, $text, $size = 12, $x = 0, $y = 0, $RGB, $fontfile = 'MgOpenModernaBold', $angle = 0) {
   $color = imagecolorallocatealpha($image->res, $RGB['red'], $RGB['green'], $RGB['blue'], $RGB['alpha']);
+
+  // Merging images where one or the other is partially transparent needs to be supported or we get black blocks.
+  //  EG text over PNG
+  // This flag will be lost again in jpegs, but that's after we've merged, so it's OK.
+  imagesavealpha($image->res, TRUE);
+
   $bounds = imagettftext($image->res, $size, $angle, $x, $y, $color, $fontfile, $text);
   if (empty($bounds)) { return FALSE; }
   return TRUE;
