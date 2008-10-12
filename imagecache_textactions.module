@@ -33,8 +33,18 @@ function imagecache_textactions_imagecache_actions() {
 function imagecache_textactions_help($path, $arg) {
   switch ($path) {
     case 'admin/help#imagecache_textactions':
-      $output = `find /usr/share/fonts -name \*.ttf`;
-      return "Fonts Found : <pre>" . $output . "</pre>";
+      if( ini_get('safe_mode') ){
+        return t("
+          It appears PHP 'safe mode' is on. 
+          This prevents me for knowing which fonts are on your system. 
+          You will have to know the exact path and filename of the fonts you intend to use 
+          - or upload some *.ttf files to your 'files' directory and use them from there.
+        ");
+      }
+      else {
+        $output = `find /usr/share/fonts -name \*.ttf`;
+        return "Fonts Found : <pre>" . $output . "</pre>";
+      }
   }
 }
 
