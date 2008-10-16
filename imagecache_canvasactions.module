@@ -75,11 +75,6 @@ function imagecache_canvasactions_imagecache_actions() {
       'description' => t(' Choose the file image you wish to use as an background, and position the processed image on it.'),
       'file' => 'canvasactions.inc',
     ),
-    'canvasactions_text2canvas' => array(
-      'name' => t(' Overlay: text to canvas.'),
-      'description' => t('Overlay: text to canvas.'),
-      'file' => 'text2canvas.inc',
-    ),
   );
 
   return $actions;
@@ -87,15 +82,6 @@ function imagecache_canvasactions_imagecache_actions() {
 
 
 
-
-
-/**
- * Need to flush the cache when this module is enabled
- */
-function imagecache_canvasactions_install() {
-  imagecache_action_definitions(TRUE);
-  drupal_set_message(t('Additional imagecache actions should now be available in the presets !settings_link', array('!settings_link' => l(t('settings'), 'admin/build/imagecache'))));
-}
 
 
 //////////////////////
