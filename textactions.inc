@@ -99,10 +99,13 @@ function textactions_text2canvas_form($action) {
       </p><p>Note that executing incorrect PHP-code can break your Drupal site.
       </p><p>You can access the $caption array which contains:<br />
       <b>$caption[\'path\']</b> Name of file, e.g. image.jpg<br />
+      <!--
       If the image is a cck imagefield, you will also have access to:<br />
       <b>$caption[\'title\']</b> optional imagefield \'title\' text<br />
       <b>$caption[\'alt\']</b> optional imagefield \'alt\' text<br />
-      <b>$caption[\'node\']</b> the complete node variable that the image is attached to.</p>', 
+      <b>$caption[\'node\']</b> the complete node variable that the image is attached to.
+      -->
+      </p>', 
       array('%php' => '<?php ?>'))
     ),
  
@@ -198,19 +201,23 @@ function textactions_evaluate_text($image, $action) {
   
   // Find the image name
   $caption['path'] = substr($image->source, strrpos($image->source, '/') + 1);
-
+/*
+ * This just doesn't work at the moment. Needs work
+ * 
   // If the image is a cck imagefield,
   // Find the image's optional title and alt text, as well as its node
   if (module_exists('imagefield')) {
     // a lot of work to find if the content_field_image_cache actually exists yet
     $table_found = false;
-    $r = mysql_query("SHOW TABLES");
-    while($row = mysql_fetch_array($r)) {
+
+    $r = db_query("SHOW TABLES");
+    while($row = db_fetch_array($r)) {
       if($row[0] == 'content_field_image_cache') {
         $table_found = true;
         break;
       }
     }
+$table_found = TRUE;
     if($table_found) {
       // if content_field_image_cache exists,
       // see if we can find info on the current image
@@ -222,6 +229,7 @@ function textactions_evaluate_text($image, $action) {
       $caption['node']=node_load($result->nid);
     }
   }
+*/  
   // TODO more info, like supporting data for image.module image info
   
   // Process the php using drupal_eval (rather than eval), but with GLOBAL variables, so they can be passed successfully
