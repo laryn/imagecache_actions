@@ -10,8 +10,6 @@
 
 require_once('utility.inc'); // For simple color routines
 
-imagecache_action_definitions(TRUE);
-
 /**
 * Implementation of hook_imagecache_actions().
 */ 
