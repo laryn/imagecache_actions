@@ -53,6 +53,14 @@ function canvasactions_pos_form($action) {
   return $form;
 }
 
+function imagecache_actions_validate_alpha(&$element, &$form_status) {
+  if (!is_numeric($element['#value']) || $element['#value'] < 1 || $element['#value'] > 100) {
+dpm($element);
+    form_set_error(join('][', $element['#parents']), t('Opacity must be a number between 1 and 100.'));
+  }
+}
+
+
 /**
  * Render the subform in a table
  */
@@ -60,15 +68,17 @@ function theme_canvasactions_rgb_form(&$form) {
   $header = array();
   $table = array();
   foreach (element_children($form) as $key) {
-    $header[$key] = $form[$key]['#title'];
+    #$header[$key] = $form[$key]['#title']; # theme_table requires numeric keys? :-(
+    $header[] = $form[$key]['#title'];
     unset($form[$key]['#title']);
     $table['field'][$key] = drupal_render($form[$key]);
   }
-  $output .= theme('table', $header, $table);
+  $output = theme('table', $header, $table);
   $output .= t('Enter colors in decimal, 0-255, or in HEX. If HEX is set, it will take priority.');
   $output .= drupal_render($form);
   return $output;
 }
+
 
 function theme_canvasactions_rgb($rgb) {
   if($rgb['HEX'] && $deduced = hex_to_rgb($rgb['HEX'])) {

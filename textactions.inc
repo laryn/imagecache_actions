@@ -27,7 +27,7 @@ function textactions_text2canvas_form($action) {
   $defaults = array(
     'size' => 12,
     'angle' => 0,
-    'xpos' => 'left-10',
+    'xpos' => 'left+10',
     'ypos' => 'bottom-10',
     'RGB' => array(
       'red' => 51,
@@ -35,8 +35,10 @@ function textactions_text2canvas_form($action) {
       'blue' => 51,
       'HEX' => '#333333',
     ),
-    'fontfile' => 'MgOpenModernaBold.ttf',
+    'alpha' => 100,
+    'fontfile' => 'fonts/liberation-fonts-1.04/LiberationSans-Regular.ttf',
     'text' => 'Hello World!',
+    'evaluate_text' => FALSE,
   );
   $action = array_merge($defaults, (array)$action);
   $form = array(
@@ -57,9 +59,10 @@ function textactions_text2canvas_form($action) {
     'alpha' => array(
       '#type' => 'textfield',
       '#title' => t('Opacity'),
-      '#default_value' => $action['alpha'] ? $action['alpha'] : 100,
+      '#default_value' => $action['alpha'],
       '#size' => 3,
       '#description' => t('Opacity: 1-100.'),
+      '#element_validate' => array('imagecache_actions_validate_alpha'),
     ),
     'xpos' => array(
       '#type' => 'textfield',
@@ -81,13 +84,15 @@ function textactions_text2canvas_form($action) {
       '#title' => t('Font file name'),
       '#default_value' => $action['fontfile'],
       '#description' => t('Font file is either the full system path (eg <code>/usr/share/fonts/truetype/ttf-bitstream-vera/VeraMono.ttf</code>), a font file inside the in the module dir "%moduledir" or the files "%filedir" folder). Example: "arial.ttf". You <em>might</em> find a list of fonts available at !helplink if your system supports it.', array('%moduledir' => drupal_get_path('module', 'imagecache_textactions'), '%filedir' => file_directory_path(), '!helplink' => l('fonts help', 'admin/help/imagecache_textactions') )),
+      '#element_validate' => array('textactions_text2canvas_validate_fontfile'),
     ),
     'text' => array(
       '#type' => 'textarea',
       '#rows' => 7,
       '#title' => t('Text'),
       '#default_value' => $action['text'],
-      '#description' => t('The text string.'),
+      '#description' => t('The text string. If you are using a WYSIWYG editor, you should disable it for this field!'),
+      '#wysiwyg' => FALSE,
     ),
     'evaluate_text' => array(
       '#type' => 'checkbox',
@@ -97,8 +102,14 @@ function textactions_text2canvas_form($action) {
       <p>Enter PHP code that will <b>return</b> your dynamic text. Do not use %php tags. 
       <br />EG <code>return format_date(time());</code>  
       </p><p>Note that executing incorrect PHP-code can break your Drupal site.
-      </p><p>You can access the $caption array which contains:<br />
-      <b>$caption[\'path\']</b> Name of file, e.g. image.jpg<br />
+      </p><p>If appropriate (it\'s an image.module image) then a $node object with its values may be available.
+      <code>return $node->title;</code>
+      <code>return format_date($node->created);</code>
+      </p><p>
+      An "image" object is also available, but that usually contains only technical data, including 
+      <code>return $image->source;</code>
+      <code>return basename($image->source);</code>
+      <code>return $image->info["filesize"];</code>
       <!--
       If the image is a cck imagefield, you will also have access to:<br />
       <b>$caption[\'title\']</b> optional imagefield \'title\' text<br />
@@ -109,26 +120,22 @@ function textactions_text2canvas_form($action) {
     ),
  
   );
-  $form['#validate'][] = 'textactions_text2canvas_validate';
   return $form;
 }
 
 /**
- * TODO Validation will not trigger in D6 unless imagecache.module
- * applies a patch first.
+ * Check if the named font is available
  */
-function textactions_text2canvas_validate($form) {
-  if (! $fontfile = textactions_find_font($form['data']['fontfile']['#value'], TRUE)) {
+function textactions_text2canvas_validate_fontfile(&$element, &$form_status) {
+  if (! $fontfile = textactions_find_font($element['#value'], TRUE)) {
     // Just warn, don't prevent
-    drupal_set_message(t("Unable to confirm that the font %fontfile is available on your system. This may fail, or your system may provide an appropriate fallback, depending on your toolkit behaviour.", array('%fontfile' => $form['data']['fontfile']['#value'])), 'warning' );
+    drupal_set_message(t("Unable to confirm that the font '%fontfile' is available on your system. This may fail, or your system may provide an appropriate fallback, depending on your toolkit behaviour.", array('%fontfile' => $element['#value'])), 'warning' );
   }
   else {
-    drupal_set_message(t("Font was found at %fontfile", array('%fontfile' => $fontfile)));
-  }
-  if (!is_numeric($form['data']['alpha']['#value']) || $form['data']['alpha']['#value']<1 || $form['data']['alpha']['#value']>100) {
-    form_set_error('alpha', t('Opacity must be a number between 1 and 100.'));
+    drupal_set_message(t("Font was found OK at %fontfile", array('%fontfile' => $fontfile)));
   }
 }
+
 
 /**
  * Implementation of theme_hook() for imagecache_ui.module
@@ -231,17 +238,33 @@ function textactions_evaluate_text($image, $action) {
   }
 */
   // TODO more info, like supporting data for image.module image info
+
+  // Load the attached node
+  static $panic; #This can trigger recursion! build-load-build-etc
+  if ($panic) return;
+  $panic=TRUE;
+  $node = textactions_node_from_filepath($image->source) ;
+  $panic = FALSE;
   
+
   // Process the php using drupal_eval (rather than eval), but with GLOBAL variables, so they can be passed successfully
-  $GLOBALS['caption'] = $caption;
+  $GLOBALS['image'] = $image;
+  $GLOBALS['node'] = $node;
   
-  $text = drupal_eval('<'.'?php global $caption; '.$action['text'].' ?'.'>');
-  $text = eval($action['text']);
+  $text = drupal_eval('<'.'?php global $node; global $image; '.$action['text'].' ?'.'>');
+  #$text = eval($action['text']);
   $text = check_plain($text);
 
   return $text;
 }
 
+
+function textactions_node_from_filepath($filepath) {
+  $sql = "SELECT nid FROM image INNER JOIN files AS f WHERE f.filepath = '%s' LIMIT 1";
+  if ( $nid = db_result(db_query($sql, $filepath))){
+    return node_load($nid);
+  }
+}
 
 /**
  * Creates an image containing only the text - used to calculate the true
@@ -288,7 +311,7 @@ function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, 
   // check if we have plus or minus values
   $v = explode('+', $value);
   $v2 = explode('-', $value);
-  if ($v2[1]) {$v[1]=-intval($v2[1]); $v[0]=$v2[0];}
+  if (!empty($v2[1])) {$v[1]=-intval($v2[1]); $v[0]=$v2[0];}
 
   switch ($v[0]) {
     case 'top':
@@ -307,7 +330,7 @@ function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, 
   // perform the adjustment
   $value=$value+$adj;
   // add any extra negative or positive
-  if ($v[1]) {$value=$value+$v[1];}
+  if (!empty($v[1])) {$value=$value+$v[1];}
   #print $current_pixels.' . '.$new_pixels.' . '.$adj.' . '.$xy.'<br />';if ($xy=='y'){exit;}
   return $value;
 }
@@ -370,7 +393,7 @@ function textactions_find_font($fontpath, $strict = FALSE) {
 
   $fontpath = ltrim($fontpath, '/');
   // Try local
-  $tryfontpath = drupal_get_path('module', 'imagecache_canvasactions') .'/'. $fontpath;
+  $tryfontpath = drupal_get_path('module', 'imagecache_canvasactions') .'/fonts/'. $fontpath;
   if (is_file($tryfontpath)) {
     return realpath($tryfontpath);
   }
