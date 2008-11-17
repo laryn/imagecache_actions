@@ -260,7 +260,7 @@ function textactions_evaluate_text($image, $action) {
 
 
 function textactions_node_from_filepath($filepath) {
-  $sql = "SELECT nid FROM image INNER JOIN files AS f WHERE f.filepath = '%s' LIMIT 1";
+  $sql = "SELECT nid FROM {image} INNER JOIN {files} AS f WHERE f.filepath = '%s' LIMIT 1";
   if ( $nid = db_result(db_query($sql, $filepath))){
     return node_load($nid);
   }
