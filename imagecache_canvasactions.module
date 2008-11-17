@@ -167,3 +167,23 @@ function imageapi_gd_image_overlay(&$image, $overlay, $x, $y, $alpha) {
 }
 
 
+/**
+ * Need to register the theme functions we expect to use
+ */
+function imagecache_canvasactions_theme() {
+  return array(
+    'imagecacheactions_rgb_form' => array(
+      'file'      => 'utility.inc',
+      'arguments' => array('form' => NULL),
+    ),
+    'imagecacheactions_rgb' => array(
+      'file'      => 'utility.inc',
+      'arguments' => array('rgb' => NULL),
+    ),
+    'canvasactions_definecanvas' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('action' => NULL),
+    ),
+
+  );
+}

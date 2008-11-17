@@ -15,6 +15,12 @@
  * @return a form definition
  */
 function imagecache_alpha_form($action) {
+  $defaults = array(
+    'flatten' => FALSE,
+    'color' => '#000000',
+  );
+  $action = array_merge($defaults, (array)$action);
+  
   $form = array();
   $form['description'] = array('#value' => t(
     "<p>Alpha toning is an advanced method of greyscaling or colorizing. 
@@ -30,7 +36,7 @@ function imagecache_alpha_form($action) {
   $form['color'] = array( 
     '#type' => 'textfield', 
     '#title' => t('Fill Color'), 
-    '#default_value' => $action['color'] ? $action['color'] : "#000000", 
+    '#default_value' => $action['color'], 
     '#size' => 10,
     '#description' => t("Although this image will end up as an alpha transparency mask, it still has to have some colour to be visible. Black is safe. Dark Sepia #704214 is good too. If it's not set, the colors will be left as they were, but will unsaturate unevenly.")
   );

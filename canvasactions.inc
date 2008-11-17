@@ -14,6 +14,27 @@
  * @return a form definition
  */
 function canvasactions_definecanvas_form($action) {
+  $defaults = array(
+    'RGB' => array(
+      'red' => 51,
+      'green' => 51,
+      'blue' => 51,
+      'HEX' => '#333333',
+    ),
+    'under' => TRUE,
+    'exact' => array( 
+      'width' => '',
+      'height' => '',
+    ),
+    'relative' => array(
+      'leftdiff' => '10',
+      'rightdiff' => '10',
+      'topdiff' => '10',
+      'bottomdiff' => '10',
+    ),
+  );
+  $action = array_merge($defaults, (array)$action);
+
   $form = array(
     'RGB' => imagecache_rgb_form($action['RGB']),
     'help' => array(
@@ -22,9 +43,9 @@ function canvasactions_definecanvas_form($action) {
     ),
     'under' => array(
       '#type' => 'checkbox',
-      '#title' => t('Resize canvas under image (possibly cropping)'),
+      '#title' => t('Resize canvas <em>under</em> image (possibly cropping)'),
       '#default_value' => $action['under'],
-      '#description' => t('If not set, this will create a solid flat layer, probably totally obscuring the source image'),
+      '#description' => t('If <em>not</em> set, this will create a solid flat layer, probably totally obscuring the source image'),
     ),
   );
   $form['info'] = array('#value' => t('Enter values in ONLY ONE of the below options. Either exact or relative. Most values are optional - you can adjust only one dimension as needed. If no useful values are set, the current base image size will be used.'));
@@ -52,7 +73,7 @@ function canvasactions_definecanvas_form($action) {
         '#size' => 5,
       ),
     );
-  $form['exact'] = array_merge($form['exact'], canvasactions_pos_form($action['exact']));
+  $form['exact'] = array_merge($form['exact'], imagecacheactions_pos_form($action['exact']));
   if(! $action['exact']['width'] && !$action['exact']['height']) {
     $form['exact']['#collapsed'] = true;
   }
@@ -115,9 +136,9 @@ function theme_canvasactions_definecanvas($element) {
     $output .= ' right:'. $action['relative']['rightdiff'];
     $output .= ' top:'. $action['relative']['topdiff'];
     $output .= ' bottom:'. $action['relative']['bottomdiff'];
-    
   }
-  $output .= theme_canvasactions_rgb($action['RGB']);
+  $output .= theme_imagecacheactions_rgb($action['RGB']);
+  $output .= ($action['under']) ? t(" <b>under</b> image ") : t(" <b>over</b> image ");
   return $output ;
 }
 
@@ -206,34 +227,27 @@ function canvasactions_definecanvas_image(& $image, $action = array()) {
  * @return a form definition
  */
 function canvasactions_canvas2file_form($action) {
-  $form = array(
-    'xpos' => array(
-      '#type' => 'textfield',
-      '#title' => t('X offset'),
-      '#default_value' => $action['xpos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>.'),
-    ),
-    'ypos' => array(
-      '#type' => 'textfield',
-      '#title' => t('Y offset'),
-      '#default_value' => $action['ypos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>.'),
-    ),
-    'alpha' => array(
-      '#type' => 'textfield',
-      '#title' => t('opacity'),
-      '#default_value' => isset($action['alpha']) ? $action['alpha'] : 100,
-      '#size' => 6,
-      '#description' => t('Opacity: 0-100.'),
-    ),
-    'path' => array(
-      '#type' => 'textfield',
-      '#title' => t('file name'),
-      '#default_value' => $action['path'],
-      '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
-    ),
+  $defaults = array(
+    'xpos' => '',
+    'ypos' => '',
+    'alpha' => '100',
+    'path' => '',
+  );
+  $action = array_merge($defaults, (array)$action);
+
+  $form = imagecacheactions_pos_form($action);
+  $form['alpha'] = array(
+    '#type' => 'textfield',
+    '#title' => t('opacity'),
+    '#default_value' => $action['alpha'],
+    '#size' => 6,
+    '#description' => t('Opacity: 0-100.'),
+  );
+  $form['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('file name'),
+    '#default_value' => $action['path'],
+    '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
   );
   return $form;
 }
@@ -283,42 +297,33 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
  * @return a form definition
  */
 function canvasactions_file2canvas_form($action) {
-  // Provide a default just to make the UI faster.
-  $default = array('xpos' => 'right', 'ypos' => 'bottom', 'alpha' => '100',);
-  $action = array_merge($default, (array)$action);
-
+  $defaults = array(
+    'xpos' => '',
+    'ypos' => '',
+    'alpha' => '100',
+    'path' => '',
+  );
+  $action = array_merge($defaults, (array)$action);
+  
   $form = array(
     'help' => array(
       '#type' => 'markup',
       '#value' => t('Note that using a transparent overlay that is larger than the source image may result in unwanted results - a solid background.'),
-    ),
-    'xpos' => array(
-      '#type' => 'textfield',
-      '#title' => t('X offset'),
-      '#default_value' => $action['xpos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>.'),
-    ),
-    'ypos' => array(
-      '#type' => 'textfield',
-      '#title' => t('Y offset'),
-      '#default_value' => $action['ypos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>.'),
-    ),
-    'alpha' => array(
-      '#type' => 'textfield',
-      '#title' => t('opacity'),
-      '#default_value' => $action['alpha'],
-      '#size' => 6,
-      '#description' => t('Opacity: 0-100. <b>Warning:</b> Due to a limitation in the GD toolkit, using an opacity other than 100% requires the system to use an algorithm that\'s much slower than the built-in functions. If you want partial transparency, you are better to use an already-transparent png as the overlay source image.'),
-    ),
-    'path' => array(
-      '#type' => 'textfield',
-      '#title' => t('file name'),
-      '#default_value' => $action['path'],
-      '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
-    ),
+    )
+  );
+  $form += imagecacheactions_pos_form($action);
+  $form['alpha'] = array(
+    '#type' => 'textfield',
+    '#title' => t('opacity'),
+    '#default_value' => $action['alpha'],
+    '#size' => 6,
+    '#description' => t('Opacity: 0-100. <b>Warning:</b> Due to a limitation in the GD toolkit, using an opacity other than 100% requires the system to use an algorithm that\'s much slower than the built-in functions. If you want partial transparency, you are better to use an already-transparent png as the overlay source image.'),
+  );
+  $form['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('file name'),
+    '#default_value' => $action['path'],
+    '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
   );
   return $form;
 }
@@ -363,28 +368,21 @@ function canvasactions_file2canvas_image(&$image, $action = array()) {
  * @return a form definition
  */
 function canvasactions_source2canvas_form($action) {
-  $form = array(
-    'xpos' => array(
-      '#type' => 'textfield',
-      '#title' => t('X offset'),
-      '#default_value' => $action['xpos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>.'),
-    ),
-    'ypos' => array(
-      '#type' => 'textfield',
-      '#title' => t('Y offset'),
-      '#default_value' => $action['ypos'],
-      '#size' => 6,
-      '#description' => t('Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>.'),
-    ),
-    'alpha' => array(
+  $defaults = array(
+    'xpos' => '',
+    'ypos' => '',
+    'alpha' => '100',
+    'path' => '',
+  );
+  $action = array_merge($defaults, (array)$action);
+
+  $form = imagecacheactions_pos_form($action);
+  $form['alpha'] = array(
       '#type' => 'textfield',
       '#title' => t('opacity'),
-      '#default_value' => $action['alpha'] ? $action['alpha'] : 100,
+      '#default_value' => $action['alpha'],
       '#size' => 6,
       '#description' => t('Opacity: 0-100.'),
-    ),
   );
   return $form;
 }

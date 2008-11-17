@@ -9,6 +9,9 @@
  * Prepare a subform for displaying RGB fields
  *
  * Helper function to render a common element.
+ * 
+ * Note that any module that re-uses this form also has to declare the theme
+ * function in order to ensure it's in the registry.
  */
 function imagecache_rgb_form($action) {
   if($action['HEX'] && $deduced = hex_to_rgb($action['HEX'])) {
@@ -16,7 +19,7 @@ function imagecache_rgb_form($action) {
     $action['HEX'] = ltrim($action['HEX'], '#');
     // With or without # is valid, but trim for consistancy
   }
-  $form = array('#theme' => 'canvasactions_rgb_form');
+  $form = array('#theme' => 'imagecacheactions_rgb_form'); 
   $form['red'] = array( '#type' => 'textfield', '#title' => t('Red'), '#default_value' => $action['red'], '#size' => 3);
   $form['green'] = array( '#type' => 'textfield', '#title' => t('Green'), '#default_value' => $action['green'], '#size' => 3);
   $form['blue'] = array( '#type' => 'textfield', '#title' => t('Blue'), '#default_value' => $action['blue'], '#size' => 3);
@@ -32,20 +35,26 @@ function imagecache_rgb_form($action) {
  *
  * Helper function to render a common element.
  */
-function canvasactions_pos_form($action) {
+function imagecacheactions_pos_form($action) {
+  $defaults = array(
+    'xpos' => 'center',
+    'ypos' => 'center',
+  );
+  $action = array_merge($defaults, (array)$action);
+
   $form = array(
     #'#theme' => 'canvasactions_pos_form',
     'xpos' => array(
       '#type' => 'textfield',
       '#title' => t('X offset'),
-      '#default_value' => isset($action['xpos']) ? $action['xpos'] : 'center',
+      '#default_value' => $action['xpos'],
       '#size' => 6,
       '#description' => t('Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>.'),
     ),
     'ypos' => array(
       '#type' => 'textfield',
       '#title' => t('Y offset'),
-      '#default_value' => isset($action['ypos']) ? $action['ypos'] : 'center',
+      '#default_value' => $action['ypos'],
       '#size' => 6,
       '#description' => t('Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>.'),
     ),
@@ -55,7 +64,6 @@ function canvasactions_pos_form($action) {
 
 function imagecache_actions_validate_alpha(&$element, &$form_status) {
   if (!is_numeric($element['#value']) || $element['#value'] < 1 || $element['#value'] > 100) {
-dpm($element);
     form_set_error(join('][', $element['#parents']), t('Opacity must be a number between 1 and 100.'));
   }
 }
@@ -64,7 +72,7 @@ dpm($element);
 /**
  * Render the subform in a table
  */
-function theme_canvasactions_rgb_form(&$form) {
+function theme_imagecacheactions_rgb_form(&$form) {
   $header = array();
   $table = array();
   foreach (element_children($form) as $key) {
@@ -80,7 +88,8 @@ function theme_canvasactions_rgb_form(&$form) {
 }
 
 
-function theme_canvasactions_rgb($rgb) {
+function theme_imagecacheactions_rgb($rgb) {
+  $output = '';
   if($rgb['HEX'] && $deduced = hex_to_rgb($rgb['HEX'])) {
     $rgb = array_merge($rgb, $deduced);
   }
