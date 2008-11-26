@@ -57,6 +57,9 @@ function imagecache_coloractions_theme() {
     'imagecache_colorshift' => array(
       'arguments' => array('element' => NULL),
     ),
+    'imagecache_alpha' => array(
+      'arguments' => array('element' => NULL),
+    ),
   );
 }
 
@@ -70,12 +73,20 @@ function imagecache_coloractions_theme() {
  */
 function imagecache_colorshift_form($action) {
   $form = array('#theme' => 'imagecache_rgb_form');
-  
   // Provide a default just to make the UI faster.
-  $default_rgb = array('HEX' => 'FF6633',);
-  $action['RGB'] = array_merge($default_rgb, (array)$action['RGB']);
-  
+  $default_rgb = array('HEX' => 'FF0000',);
+  $action['RGB'] = array_merge($default_rgb, (array)$action['RGB']);  
   $form['RGB'] = imagecache_rgb_form($action['RGB']);
+  $form['note'] = array('#value' => t("<p>
+    Note that colorshift is a mathematical filter that doesn't always 
+    have the expected result. 
+    To shift an image precisely TO a target color, 
+    desaturate (greyscale) it before colorizing.
+    The hue (color wheel) is the <em>direction</em> the 
+    existing colors are shifted. The tone (inner box) is the amount.
+    Keep the tone half-way up the left site of the color box 
+    for best results.
+  </p>"));
   return $form;
 }
 

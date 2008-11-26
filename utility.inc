@@ -14,19 +14,17 @@
  * function in order to ensure it's in the registry.
  */
 function imagecache_rgb_form($action) {
+
   if($action['HEX'] && $deduced = hex_to_rgb($action['HEX'])) {
     $action = array_merge($action, $deduced);
     $action['HEX'] = ltrim($action['HEX'], '#');
     // With or without # is valid, but trim for consistancy
   }
   $form = array('#theme' => 'imagecacheactions_rgb_form'); 
-  $form['red'] = array( '#type' => 'textfield', '#title' => t('Red'), '#default_value' => $action['red'], '#size' => 3);
-  $form['green'] = array( '#type' => 'textfield', '#title' => t('Green'), '#default_value' => $action['green'], '#size' => 3);
-  $form['blue'] = array( '#type' => 'textfield', '#title' => t('Blue'), '#default_value' => $action['blue'], '#size' => 3);
+  $form['farb'] = array('#weight' => -1); // Placeholder to get its weight right
   $form['HEX'] = array( '#type' => 'textfield', '#title' => t('HEX'), '#default_value' => $action['HEX'], '#size' => 7);
 
   return $form;
-  # TODO add a color validation step here?
 }
 
 
@@ -73,33 +71,52 @@ function imagecache_actions_validate_alpha(&$element, &$form_status) {
  * Render the subform in a table
  */
 function theme_imagecacheactions_rgb_form(&$form) {
-  $header = array();
-  $table = array();
-  foreach (element_children($form) as $key) {
-    #$header[$key] = $form[$key]['#title']; # theme_table requires numeric keys? :-(
-    $header[] = $form[$key]['#title'];
-    unset($form[$key]['#title']);
-    $table['field'][$key] = drupal_render($form[$key]);
+
+  // Add a farb element
+  drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
+  drupal_add_js('misc/farbtastic/farbtastic.js');
+//  drupal_add_js(drupal_get_path('module', 'imagecache_coloractions') . '/color.js');
+
+  $hex_id = $form['HEX']['#id'];
+  $form['farb'] = array('#value' => "<div id=\"$hex_id-farb\" style=\"float:right\"></div>", '#weight' => -1 );
+
+  // Adds the JS that binds the textarea with the farb element
+  $js = "
+  $(document).ready(function() {
+    farbify($('#$hex_id'), '#$hex_id-farb');
+  });
+
+  function farbify(elt, wrapper) {
+    var farb = $.farbtastic(wrapper);
+    farb.linkTo(function(color) {
+        elt
+          .css('background-color', color)
+          .css('color', this.hsl[2] > 0.5 ? '#000' : '#fff')
+          .val(color.substring(1));
+      });
+    farb.setColor('#' + elt.val());
+    elt.bind('keyup', function(){ updateColor(elt, farb); });
   }
-  $output = theme('table', $header, $table);
-  $output .= t('Enter colors in decimal, 0-255, or in HEX. If HEX is set, it will take priority.');
-  $output .= drupal_render($form);
+  function updateColor(elt, farb) {
+    var text = elt.val();
+    if (text.length == 6)
+      farb.setColor('#' + text);
+  }
+
+  ";
+  drupal_add_js($js, 'inline');  
+  $output = drupal_render($form);
   return $output;
 }
 
 
 function theme_imagecacheactions_rgb($rgb) {
-  $output = '';
-  if($rgb['HEX'] && $deduced = hex_to_rgb($rgb['HEX'])) {
-    $rgb = array_merge($rgb, $deduced);
-  }
-  if ($rgb['red'] || $rgb['green'] || $rgb['blue']) {
-    $output .= ' RGB:['. $rgb['red'] .', '. $rgb['green'] .', '. $rgb['blue'] .'] #'. $rgb['HEX'];
+  if ($rgb['HEX']) {
+    return " <span style=\"width:2em; border:1px solid white; background-color:#{$rgb["HEX"]}\" >&nbsp;#{$rgb['HEX']}&nbsp;</span>";
   }
   else {
-    $output .= ' ' .t('Transparent');
+    return ' ' .t('Transparent');
   }
-  return $output;
 }
 
 

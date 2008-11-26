@@ -166,6 +166,30 @@ function imageapi_gd_image_overlay(&$image, $overlay, $x, $y, $alpha) {
   return TRUE;
 }
 
+/**
+ * This preliminary function copied over from 
+ * http://drupal.org/project/bc_imagecache_adv_actions at 2008-10-18
+ * 
+ * Maybe it will work. I have no idea.
+ * 
+ * UNTESTED beware.
+ */
+function imageapi_imagemagick_image_overlay(&$frontImage, $bgImage, $x = 0, $y = 0, $adjx = 0, $adjy = 0) {
+    $dst = file_create_filename( uniqid('im') . '.' . $frontImage->info['extension'] , 'files/tmp'  );
+    $dst2 = file_create_filename( uniqid('im2') .'.' . $frontImage->info['extension']  , 'files/tmp'  );
+    $image = imageapi_image_open($bgImage) ;
+
+    if ( $y == 'middle' ) {
+        $y = ($image->info['height'] / 2) -  $frontImage->info['height'] / 2 - $adjy ;
+    }
+    if ( $x == 'middle' ) {
+        $x = ($image->info['width'] / 2) -  $frontImage->info['width'] / 2 - $adjx;
+    }
+    imageapi_image_close($frontImage, $dst);
+    $image->ops[] = ' -draw "image over '.$x.','.$y.' 0,0 \''.$dst.'\'"'  ;
+    imageapi_image_close($image, $dst2);
+    return $dst2;
+}
 
 /**
  * Need to register the theme functions we expect to use
@@ -182,8 +206,23 @@ function imagecache_canvasactions_theme() {
     ),
     'canvasactions_definecanvas' => array(
       'file'      => 'canvasactions.inc',
-      'arguments' => array('action' => NULL),
+      'arguments' => array('element' => NULL),
     ),
+    'canvasactions_file2canvas' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
+    'canvasactions_source2canvas' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
+    'canvasactions_canvas2file' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
+    
+    
+
 
   );
 }

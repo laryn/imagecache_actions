@@ -16,9 +16,6 @@
 function canvasactions_definecanvas_form($action) {
   $defaults = array(
     'RGB' => array(
-      'red' => 51,
-      'green' => 51,
-      'blue' => 51,
       'HEX' => '#333333',
     ),
     'under' => TRUE,
@@ -130,6 +127,7 @@ function theme_canvasactions_definecanvas($element) {
   $action = $element['#value'];
   if ($action['exact']['width'] || $action['exact']['width']) {
     $output = $action['exact']['width'] .'x'. $action['exact']['height'];
+    $output .= " (". $action['exact']['xpos'] .', '. $action['exact']['ypos'] .") ";
   }
   else {
     $output = ' left:'. $action['relative']['leftdiff'];

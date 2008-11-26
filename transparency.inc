@@ -1,8 +1,9 @@
 <?php
-// $ID: $
+// $Id$
 /**
  * Helper functions for the alpha action for imagecache
  * 
+ * @author dan http://coders.co.nz
  */
  
  
@@ -17,7 +18,7 @@
 function imagecache_alpha_form($action) {
   $defaults = array(
     'flatten' => FALSE,
-    'color' => '#000000',
+    'RGB' => array('HEX' => '#000000'),
   );
   $action = array_merge($defaults, (array)$action);
   
@@ -33,13 +34,18 @@ function imagecache_alpha_form($action) {
       or image in a later process or <strong>convert</strong> it to a PNG before saving 
       using available imagecache actions.</p>"
     ));
-  $form['color'] = array( 
-    '#type' => 'textfield', 
-    '#title' => t('Fill Color'), 
-    '#default_value' => $action['color'], 
-    '#size' => 10,
-    '#description' => t("Although this image will end up as an alpha transparency mask, it still has to have some colour to be visible. Black is safe. Dark Sepia #704214 is good too. If it's not set, the colors will be left as they were, but will unsaturate unevenly.")
-  );
+
+  $form['RGB'] = imagecache_rgb_form($action['RGB']);
+  $form['RGB']['#type'] = 'fieldset'; 
+  $form['RGB']['#title'] = t('Fill Color'); 
+  $form['RGB']['HEX']['#description'] = t("
+    Although this image will end up as an alpha transparency mask, 
+    it still has to have some colour to be visible. 
+    Black is safe. Dark Sepia #704214 is good too. 
+    If it's not set, the colors will be left as they were, but will unsaturate unevenly.
+    ");
+  
+
   $form['flatten'] = array( 
     '#type' => 'checkbox', 
     '#title' => t('Flatten Transparency'), 
@@ -56,7 +62,7 @@ function imagecache_alpha_form($action) {
  */
 function theme_imagecache_alpha($element) {
   return  ($element['#value']['flatten'] ? t("Flatten") : t("Transparent")) 
-    ." : ". $element['#value']['color'];
+    ." : ". theme_imagecacheactions_rgb($element['#value']['RGB']);
 }
 
 
@@ -82,7 +88,7 @@ function imagecache_alpha_image(&$image, $data = array()) {
   if (! $data['flatten']) {
     // given an image, convert dark areas to opaque, 
     // light to transparent,
-    return png_color2alpha($image, $data['color']);
+    return png_color2alpha($image, $data['RGB']['HEX']);
   } 
   else {
     // Do the opposite, flatten the transparency ONTO the given colour
@@ -99,7 +105,7 @@ function imagecache_alpha_image(&$image, $data = array()) {
     imagealphablending($base_image, FALSE); 
  
     // Start with a solid colour
-    $background_rgb = hex_to_rgb($data['color']) ;
+    $background_rgb = hex_to_rgb($data['RGB']['HEX']) ;
 
    // Setting the background colour here solid is what flattens the image
    $background_color = @imagecolorallocatealpha($base_image, $background_rgb['red'], $background_rgb['green'], $background_rgb['blue'], 0) ;
@@ -121,8 +127,6 @@ function imagecache_alpha_image(&$image, $data = array()) {
     $foreground = $image->res;
     $success = imagecopy($base_image, $image->res, 0, 0, 0, 0, $info['width'], $info['height']);
 
-    #   imagesavealpha($image, FALSE);
-
     $image->res = $base_image;
     return TRUE;
   }
@@ -138,7 +142,7 @@ function imagecache_alpha_image(&$image, $data = array()) {
  * With no color set, use the existing hue.
  * 
  * To save a partially transparent image, the image resource must be switched to PNG.
- * ... or maybe not. Just flatten it yourself, or swithch the format yourself.
+ * ... or maybe not. Just flatten it yourself, or switch the format yourself.
  * This hack would produce side effects otherwise.
  */
 function png_color2alpha(&$image, $color) {
