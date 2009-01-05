@@ -75,6 +75,11 @@ function imagecache_canvasactions_imagecache_actions() {
       'description' => t(' Choose the file image you wish to use as an background, and position the processed image on it.'),
       'file' => 'canvasactions.inc',
     ),
+    'canvasactions_roundedcorners' => array(
+      'name' => t('Rounded Corners: Set a radius to crop corners by.'),
+      'description' => t(' This is true cropping, not overlays, so the result can be transparent. If using JPEGS you will need to place a barkground color or image underneath it with alpha-flatten or underlay'),
+      'file' => 'canvasactions.inc',
+    ),
   );
 
   return $actions;
@@ -129,7 +134,7 @@ function imageapi_image_overlay(&$image, $overlay, $x, $y, $alpha) {
 function imageapi_gd_image_overlay(&$image, $overlay, $x, $y, $alpha) {
   if (is_string($overlay) ) {
     if (! file_exists($overlay)) {
-      watchdog('imagecache', 'Image file does not exist. Attempted to overlay $overlay');
+      watchdog('imagecache', "Image file does not exist. Attempted to overlay $overlay");
     }
     $overlay = imageapi_image_open($overlay);
   }
@@ -217,6 +222,10 @@ function imagecache_canvasactions_theme() {
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_canvas2file' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
+    'canvasactions_roundedcorners' => array(
       'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),

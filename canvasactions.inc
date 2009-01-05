@@ -407,4 +407,169 @@ function canvasactions_source2canvas_image(&$image, $action = array()) {
   return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);
 }
 
-////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////
+
+/**
+ * Set radius for corner rounding
+ * 
+ * Implementation of imagecache_hook_form()
+ *
+ * @param $action array of settings for this action
+ * @return a form definition
+ */
+function canvasactions_roundedcorners_form($action) {
+  $defaults = array(
+    'radius' => '16',
+    'antialias' => TRUE,
+  );
+  $action = array_merge($defaults, (array)$action);
+
+  $form['radius'] = array(
+      '#type' => 'textfield',
+      '#title' => t('radius'),
+      '#default_value' => $action['radius'],
+      '#size' => 2,
+  );
+
+  $form['antialias'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('antialias'),
+      '#return_value' => TRUE,
+      '#default_value' => $action['antialias'],
+      '#description' => t('Attempt antialias smoothing when drawing the corners'),
+  );
+
+  $form['notes'] = array(
+      '#type' => 'markup',
+      '#value' => t('
+        Note: the rounded corners effect uses true alpha transparency masking. 
+        This means that this effect <b>will fail to be saved</b> on jpegs 
+        <em>unless</em> you either <ul>
+        <li>convert the image to PNG (using the coloractions filter for that),</li>
+        <li>underlay a solid color (using coloractions-alpha-flatten) or</li> 
+        <li>underlay a background image (canvasactions-underlay)</li> 
+        </ul>
+        as a later part of this imagecache pipeline.
+        <br/>
+      '),
+  );
+
+  return $form;
+}
+
+/**
+ * Create a rounded corner mask and alpha-merge it with the image.
+ * 
+ * Implementation of hook_image()
+ *
+ * @param $image
+ * @param $action
+ */
+function canvasactions_roundedcorners_image(&$image, $action = array()) {
+
+  $width = $image->info['width'];
+  $height = $image->info['height'];
+  $radius = $action['radius'];
+
+  if ($action['antialias']) {
+    $width = $width * 3;
+    $height = $height * 3;
+    $radius = $radius * 3;
+  }
+  
+  // Create a mask with rounded corners
+  $mask = imagecreatetruecolor($width, $height);
+
+  // Is using the toolkit really worth the bother?
+  // Just doing it in an attempt to be consistent
+  $mask_image = (object)array(
+    'res' => &$mask, 
+    'info' => array('width' => $width, 'height' => $height, 'extension' => 'png'), 
+    'toolkit' => $image->toolkit,
+  );
+
+  // Start with a blank slate
+  $background = imagecolorallocatealpha($mask, 255, 255, 255, 127);
+  imagesavealpha($mask, TRUE);
+  imagealphablending($mask, false);
+  imagefilledrectangle($mask, 0, 0, $width, $height, $background);
+  // Place solid lumps on it
+  $foreground = imagecolorallocatealpha($mask, 0, 0, 0, 0);
+
+  // Blobs in the corners
+  $diameter = $radius * 2;
+  ImageFilledEllipse($mask, $radius, $radius, $diameter, $diameter, $foreground);
+  ImageFilledEllipse($mask, $width-$radius, $radius, $diameter, $diameter, $foreground);
+  ImageFilledEllipse($mask, $radius, $height-$radius, $diameter, $diameter, $foreground);
+  ImageFilledEllipse($mask, $width-$radius, $height-$radius, $diameter, $diameter, $foreground);
+  
+  // Block out the middle
+  ImageFilledRectangle($mask, $radius, 0, $width-$radius, $height, $foreground);
+  ImageFilledRectangle($mask, 0, $radius, $width, $height-$radius, $foreground);
+
+  if ($action['antialias']) {
+    // Use toolkit so scale down again. 
+    imageapi_image_scale($mask_image, $width/3, $height/3);
+    $mask = $mask_image->res;
+  }
+  // No we have a mask. Merge to get a result
+  #$image->res = $mask;  
+  canvasactions_mask($image, $mask_image);
+  
+  return TRUE;
+}
+
+/**
+ * Given a source image in the $action, use the alpha values from it to set
+ * transparency on the source image.
+ * 
+ * Note that the returned image has transparency set BUT if it's a jpeg it may
+ * not remember that channel.
+ * Need to switch formats or flatten before saving, or the transparency will be
+ * lost.
+ */
+function canvasactions_mask(&$image, $mask) {
+  // I do not believe there is a func for this, so I'll do it pixel-by-pixel
+  // Slow, I know.
+  $info = $image->info;
+  if (!$info) { return FALSE; }
+  $img = &$image->res;
+  $msk = &$mask->res;
+  
+  imagesavealpha($image->res, TRUE);
+  imagealphablending($image->res, FALSE);
+
+  $width = imagesx($img);  // Use the actual, not claimed image size.
+  $height = imagesy($img);
+  for ($i = 0; $i < $height; $i++) { //this loop traverses each row in the image
+    for ($j = 0; $j < $width; $j++) { //this loop traverses each pixel of each row
+
+      // Get the color & alpha info of the current pixel
+      $color_ix = imagecolorat($img, $j, $i); // an index
+      $rgba_array = imagecolorsforindex($img, $color_ix);
+      
+      // Get the alpha of the corresponding mask pixel
+      $mask_color_ix = imagecolorat($msk, $j, $i); // an index
+      $msk_rgba_array = imagecolorsforindex($msk, $mask_color_ix);
+
+      // Calculate the total alpha value of this pixel
+      $rgba_array['alpha'] = max($msk_rgba_array['alpha'], $rgba_array['alpha']);
+
+      //paint the pixel
+      $color_to_paint = imagecolorallocatealpha($image->res, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
+      imagesetpixel($image->res, $j, $i, $color_to_paint);  
+    }
+  }
+  return TRUE;
+
+}
+
+
+/**
+ * Implementation of theme_hook() for imagecache_ui.module
+ */
+function theme_canvasactions_roundedcorners($element) {
+  $data = $element['#value'];
+  return "Radius: {$data['radius']}px " . ($data['antialias'] ? "antialiased" : "") ;
+}

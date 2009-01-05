@@ -26,6 +26,7 @@ require_once('utility.inc');
  * Declare available actions, return help text about this filter.
  */
 function imagecache_coloractions_imagecache_actions() {
+
   $actions = array(
     'imagecache_colorshift' => array(
       'name' => 'Color Shift',
@@ -256,7 +257,7 @@ function imagecache_convert_form($action) {
     'format' => array(
       '#title' => t("File format"),
       '#type' => 'select',
-      '#default_value' => $action['format'],
+      '#default_value' => isset($action['format']) ? isset($action['format']) : 'image/png',
       '#options' => imagecache_file_formats(),
     )
   );
