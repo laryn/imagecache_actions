@@ -185,9 +185,6 @@ function canvasactions_definecanvas_image(& $image, $action = array()) {
   // convert from hex (as it is stored in the UI)
   if($RGB['HEX'] && $deduced = hex_to_rgb($RGB['HEX'])) {
     $RGB = array_merge($RGB, $deduced);
-  }
-
-  if ($RGB['red'] || $RGB['green'] || $RGB['blue']) { // one may be zero...
     $background = imagecolorallocate($newcanvas, $RGB['red'], $RGB['green'], $RGB['blue']);
   }
   else {
@@ -226,10 +223,11 @@ function canvasactions_definecanvas_image(& $image, $action = array()) {
  */
 function canvasactions_canvas2file_form($action) {
   $defaults = array(
-    'xpos' => '',
-    'ypos' => '',
+    'xpos' => '0',
+    'ypos' => '0',
     'alpha' => '100',
     'path' => '',
+    'dimensions' => 'original',
   );
   $action = array_merge($defaults, (array)$action);
 
@@ -239,13 +237,20 @@ function canvasactions_canvas2file_form($action) {
     '#title' => t('opacity'),
     '#default_value' => $action['alpha'],
     '#size' => 6,
-    '#description' => t('Opacity: 0-100.'),
+    '#description' => t('Opacity: 0-100. Be aware that values other than 100% may be slow to process.'),
   );
   $form['path'] = array(
     '#type' => 'textfield',
     '#title' => t('file name'),
     '#default_value' => $action['path'],
     '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
+  );
+  $form['dimensions'] = array(
+    '#type' => 'radios',
+    '#title' => t('final dimensions'),
+    '#default_value' => $action['dimensions'],
+    '#options' => array('original' => 'original (dimensions are retained)', 'background' => 'background (image will be forced to match the size of the background)', 'minimum' => 'minimum (image may be cropped)', 'maximum' => 'maximum (image may end up with gaps)'),
+    '#description' => t('What to do when the background image is a different size from the source image. Backgrounds are not tiled, but may be arbitrarily large.'),
   );
   return $form;
 }
@@ -275,10 +280,37 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   else if (file_exists(file_create_path($action['path']))) {
     $underlay = imageapi_image_open(file_create_path($action['path']));
   }
+  
+  // To handle odd sizes, we will resize/crop the background image to the desired dimensions before 
+  // starting the merge. The built-in imagecopymerge, and the watermark library both do not
+  // allow overlays to be bigger than the target.
+  // Adjust size
+  $crop_rules = array('xoffset' => 0, 'yoffset' => 0, );
+  switch ($action['dimensions']) {
+    case 'original' :
+      $crop_rules['width'] = $image->info['width'];
+      $crop_rules['height']  = $image->info['height'];
+      break;
+    case 'background' :
+      $crop_rules['width'] = imagesx($underlay->res);
+      $crop_rules['height'] = imagesy($underlay->res);;
+      break;
+    case 'minimum' :
+      $crop_rules['width'] = min(imagesx($underlay->res), $image->info['width']);
+      $crop_rules['height'] = min(imagesy($underlay->res), $image->info['height']);
+      break;
+    case 'maximum' :
+      $crop_rules['width'] = max(imagesx($underlay->res), $image->info['width']);
+      $crop_rules['height'] = max(imagesy($underlay->res), $image->info['height']);
+      break;
+  }
+  // imageapi crop assumes upsize is legal.
+  imagecache_crop_image($underlay, $crop_rules);
+  
   // This func modifies the underlay image by ref, placing the current canvas on it
   if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'])) {
     $image->res = $underlay->res;
-    //$image = $underlay;
+    
     return TRUE;
   }
 }
@@ -322,8 +354,19 @@ function canvasactions_file2canvas_form($action) {
     '#title' => t('file name'),
     '#default_value' => $action['path'],
     '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
+    '#element_validate' => array('canvasactions_file2canvas_validate_file'),
   );
   return $form;
+}
+
+
+/**
+ * Check if the named file is available
+ */
+function canvasactions_file2canvas_validate_file(&$element, &$form_status) {
+  if (! file_exists($element['#value']) && ! file_exists(file_create_path($element['#value'])) ) {
+    form_error($element, t("Unable to find the named file '%filepath' in either the site or the files directory. Please check the path. Use relative paths only.", array('%filepath' => $element['#value'])) );
+  }
 }
 
 /**
@@ -351,59 +394,10 @@ function canvasactions_file2canvas_image(&$image, $action = array()) {
   else if (file_exists(file_create_path($action['path']))) {
     $overlay = imageapi_image_open(file_create_path($action['path']));
   }
-  return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);
-}
-
-///////////////////////////////////////////////////////////////////
-/**
- * Place the source image on top of the current canvas
- *
- * Implementation of imagecache_hook_form()
- *
- *
- *
- * @param $action array of settings for this action
- * @return a form definition
- */
-function canvasactions_source2canvas_form($action) {
-  $defaults = array(
-    'xpos' => '',
-    'ypos' => '',
-    'alpha' => '100',
-    'path' => '',
-  );
-  $action = array_merge($defaults, (array)$action);
-
-  $form = imagecacheactions_pos_form($action);
-  $form['alpha'] = array(
-      '#type' => 'textfield',
-      '#title' => t('opacity'),
-      '#default_value' => $action['alpha'],
-      '#size' => 6,
-      '#description' => t('Opacity: 0-100.'),
-  );
-  return $form;
-}
-
-/**
- * Implementation of theme_hook() for imagecache_ui.module
- */
-function theme_canvasactions_source2canvas($element) {
-  $data = $element['#value'];
-  return 'xpos:'. $data['xpos'] .', ypos:'. $data['ypos'] .' alpha:'. $data['alpha'] .'%' ;
-}
-
-/**
- * Place the source image on the current background
- *
- * Implementation of hook_image()
- *
- *
- * @param $image
- * @param $action
- */
-function canvasactions_source2canvas_image(&$image, $action = array()) {
-  $overlay = imageapi_image_open($image->source); // this probably means opening the image twice. c'est la vie
+  if (! isset($overlay) || ! $overlay) {
+    trigger_error(t("Failed to find overlay image %path for imagecache_actions file-to-canvas action. File was not found in the sites 'files' path or the current theme folder.", array('%path' => $action['path'])), E_USER_WARNING);
+    return FALSE;
+  }
   return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);
 }
 
@@ -573,3 +567,4 @@ function theme_canvasactions_roundedcorners($element) {
   $data = $element['#value'];
   return "Radius: {$data['radius']}px " . ($data['antialias'] ? "antialiased" : "") ;
 }
+

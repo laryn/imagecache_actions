@@ -61,6 +61,12 @@ function imagecache_coloractions_theme() {
     'imagecache_alpha' => array(
       'arguments' => array('element' => NULL),
     ),
+    'imagecache_brightness' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'imagecache_convert' => array(
+      'arguments' => array('element' => NULL),
+    ),
   );
 }
 
@@ -130,7 +136,10 @@ function imagecache_colorshift_image(&$image, $data = array()) {
  * @return a form definition
  */
 function imagecache_brightness_form($action) {
+  $default = array('filter_arg1' => '100',);
+  $action = array_merge($default, (array)$action);  
   $form = array();
+  $form['help'] = array( '#value' => t("The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark.") );
   $form['filter_arg1'] = array(
     '#type' => 'textfield',
     '#title' => t('Brightness'),
@@ -198,7 +207,8 @@ function imagecache_inverse_image(&$image, $data = array()) {
  * @return bool success
  */
 function imagecache_imagefilter($image, $data) {
-  if (! imagecache_gd_imagefilter($image, $data['filter'], $data['filter_arg1'], $data['filter_arg2'], $data['filter_arg3'] )) {
+
+  if (! imagecache_gd_imagefilter($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL)) {
     watchdog('imagecache', 'imagecache_imagefilter failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
     return FALSE;
   }

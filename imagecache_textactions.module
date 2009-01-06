@@ -53,6 +53,10 @@ function imagecache_textactions_help($path, $arg) {
  */
 function imagecache_textactions_theme() {
   return array(
+    'textactions_text2canvas' => array(
+      'file'      => 'textactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
     'imagecacheactions_rgb_form' => array(
       'file'      => 'utility.inc',
       'arguments' => array('form' => NULL),

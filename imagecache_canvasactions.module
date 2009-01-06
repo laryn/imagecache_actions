@@ -60,11 +60,6 @@ function imagecache_canvasactions_imagecache_actions() {
       'description' => t('Define the size of the working canvas and background color, this controls the dimensions of the output image..'),
       'file' => 'canvasactions.inc',
     ),
-    'canvasactions_source2canvas' => array(
-      'name' => t('Overlay: source image to canvas'),
-      'description' => t('Places the source image onto the canvas for compositing.'),
-      'file' => 'canvasactions.inc',
-    ),
     'canvasactions_file2canvas' => array(
       'name' => t('Overlay: file image to canvas (watermark)'),
       'description' => t(' Choose the file image you wish to use as an overlay, and position it in a layer on top of the canvas.'),

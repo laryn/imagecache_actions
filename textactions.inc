@@ -142,7 +142,17 @@ function textactions_text2canvas_validate_fontfile(&$element, &$form_status) {
  */
 function theme_textactions_text2canvas($element) {
   $data = $element['#value'];
-  return "<em><strong>". $data['text'] ."</strong></em>" ;
+  return "<em><strong>". $data['text'] ."</strong></em>" 
+  . t("<br/>%sizepx #%color %alpha% %angle&deg; (%xpos, %ypos)", 
+    array(
+      '%size' => $data['size'],
+      '%color' => strtoupper($data['RGB']['HEX']),
+      '%alpha' => $data['alpha'],
+      '%angle' => $data['angle'],
+      '%xpos' => $data['xpos'],
+      '%ypos' => $data['ypos'],
+    )
+  ) ;
 }
 
 /**
@@ -358,6 +368,7 @@ function imageapi_gd_image_overlaytext_alpha(&$image, $text, $size = 12, $x = 0,
   //  EG text over PNG
   // This flag will be lost again in jpegs, but that's after we've merged, so it's OK.
   imagesavealpha($image->res, TRUE);
+  imagealphablending($image->res, TRUE);
 
   $bounds = imagettftext($image->res, $size, $angle, $x, $y, $color, $fontfile, $text);
   if (empty($bounds)) { return FALSE; }
@@ -393,7 +404,7 @@ function textactions_find_font($fontpath, $strict = FALSE) {
 
   $fontpath = ltrim($fontpath, '/');
   // Try local
-  $tryfontpath = drupal_get_path('module', 'imagecache_canvasactions') .'/fonts/'. $fontpath;
+  $tryfontpath = drupal_get_path('module', 'imagecache_textactions') .'/fonts/'. $fontpath;
   if (is_file($tryfontpath)) {
     return realpath($tryfontpath);
   }
