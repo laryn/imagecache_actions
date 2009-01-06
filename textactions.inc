@@ -36,7 +36,7 @@ function textactions_text2canvas_form($action) {
       'HEX' => '#333333',
     ),
     'alpha' => 100,
-    'fontfile' => 'fonts/liberation-fonts-1.04/LiberationSans-Regular.ttf',
+    'fontfile' => 'liberation-fonts-1.04/LiberationSans-Regular.ttf',
     'text' => 'Hello World!',
     'evaluate_text' => FALSE,
   );
