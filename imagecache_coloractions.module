@@ -15,10 +15,10 @@
  * @author dan http://coders.co.nz
  */
 
-require_once('utility.inc');
-
 // During devel, caching is pointless. Flush it
 //imagecache_action_definitions(TRUE);
+
+require_once(dirname(__FILE__) .'/utility.inc');
 
 /**
  * Implementation of hook_imagecache_actions().
@@ -79,10 +79,13 @@ function imagecache_coloractions_theme() {
  * @return a form definition
  */
 function imagecache_colorshift_form($action) {
+  $defaults = array(
+    'RGB' => array(
+      'HEX' => '#FF0000',
+    ),
+  );
+  $action = array_merge($defaults, (array)$action);
   $form = array('#theme' => 'imagecache_rgb_form');
-  // Provide a default just to make the UI faster.
-  $default_rgb = array('HEX' => 'FF0000',);
-  $action['RGB'] = array_merge($default_rgb, (array)$action['RGB']);  
   $form['RGB'] = imagecache_rgb_form($action['RGB']);
   $form['note'] = array('#value' => t("<p>
     Note that colorshift is a mathematical filter that doesn't always 

@@ -8,7 +8,7 @@
  * 
  */
 
-require_once('utility.inc'); // For simple color routines
+require_once(dirname(__FILE__) .'/utility.inc'); // For simple color routines
 
 /**
 * Implementation of hook_imagecache_actions().

@@ -99,27 +99,54 @@ function textactions_text2canvas_form($action) {
       '#title' => t('Evaluate text as PHP code'),
       '#default_value' => $action['evaluate_text'],
       '#description' => t('If selected, the text will be treated as PHP code.
-      <p>Enter PHP code that will <b>return</b> your dynamic text. Do not use %php tags. 
-      <br />EG <code>return format_date(time());</code>  
-      </p><p>Note that executing incorrect PHP-code can break your Drupal site.
-      </p><p>If appropriate (it\'s an image.module image) then a $node object with its values may be available.
-      <code>return $node->title;</code>
-      <code>return format_date($node->created);</code>
-      </p><p>
-      An "image" object is also available, but that usually contains only technical data, including 
-      <code>return $image->source;</code>
-      <code>return basename($image->source);</code>
-      <code>return $image->info["filesize"];</code>
-      <!--
-      If the image is a cck imagefield, you will also have access to:<br />
-      <b>$caption[\'title\']</b> optional imagefield \'title\' text<br />
-      <b>$caption[\'alt\']</b> optional imagefield \'alt\' text<br />
-      <b>$caption[\'node\']</b> the complete node variable that the image is attached to.</p>
-      -->', 
+      <p>
+        Enter PHP code that will <b>return</b> your dynamic text. Do not use %php tags. 
+        <br />EG <code>return format_date(time());</code>  
+        <br /><code>return $file_data->description ? $file_data->description : $node->title;</code>
+      </p>
+      <p>Note that executing incorrect PHP-code can break your Drupal site.</p>
+      <p>
+        <b>If it\'s an image.module image</b> then a <b>$node</b> object with its values 
+        <em>may</em> be available.
+        <br/><code>return $node->title;</code>
+        <br/><code>return format_date($node->created);</code>
+      </p>
+
+      <p>
+        If it\'s an image that has been attached to a node using <b>CCK-filefield-imagefield</b>
+        (or just filefield)
+        then as well as the parent <b>$node</b> object,
+        a <b>$file_data</b> object that may contain a file description from that file field.
+        <br/><code>return $file_data->description;</code>
+        <small>So far that seems to be the only available \'data\' provided by filefield, 
+        but you can investigate the node structure using devel.module or print_r() 
+        to see what else this array actually contains</small>.
+      </p>
+      <p>
+        If it\'s a file that\'s just been <b>attached using upload.module</b>,
+        a <b>$file_data</b> object may also have a description.
+        <br/><code>return $file_data->description;</code>
+      </p>
+      <p>
+        If the image path is detected as belonging to more than one node, just the
+        data for the first one found is returned. 
+      </p>
+
+      <p>
+        An "<b>$image</b>" object is also available, but that usually contains only technical data, including 
+        <br/><code>return $image->source;</code>
+        <br/><code>return basename($image->source);</code>
+        <br/><code>return $image->info["filesize"];</code>
+      </p>
+      ', 
       array('%php' => '<?php ?>'))
     ),
- 
   );
+  if (! user_access('administer site configuration')) {
+    $form['evaluate_text']['#disabled'] = TRUE;
+    $form['text']['#disabled'] = $action['evaluate_text']; // lock this if an admin has enabled evaluation.
+    $form['evaluate_text']['#description'] = 'requires <b>administer site configuration</b> permissions.';
+  }
   return $form;
 }
 
@@ -132,7 +159,7 @@ function textactions_text2canvas_validate_fontfile(&$element, &$form_status) {
     drupal_set_message(t("Unable to confirm that the font '%fontfile' is available on your system. This may fail, or your system may provide an appropriate fallback, depending on your toolkit behaviour.", array('%fontfile' => $element['#value'])), 'warning' );
   }
   else {
-    drupal_set_message(t("Font was found OK at %fontfile", array('%fontfile' => $fontfile)));
+    drupal_set_message(t("Font was found OK at %fontfile", array('%fontfile' => $fontfile)), 'notice');
   }
 }
 
@@ -212,67 +239,130 @@ function textactions_text2canvas_image(&$image, $action = array()) {
  * @return $text Plain string to be placed on the imagecache process.
  */
 function textactions_evaluate_text($image, $action) {
-  // store our variables here
-  $caption=array();
-  
-  // Find the image name
-  $caption['path'] = substr($image->source, strrpos($image->source, '/') + 1);
+  // Try to load the attached node - if any
 
-/*
- * This is entirely broken in CCK D6 - removed
- * 
- * 
-  // If the image is a cck imagefield,
-  // Find the image's optional title and alt text, as well as its node
-  if (module_exists('imagefield')) {
-    // a lot of work to find if the content_field_image_cache actually exists yet
-    $table_found = false;
-    $r = db_query("SHOW TABLES");
+  // This object MAY be filled up with extra data (by ref) when doing the lookup
+  $file_data = (object)array();
 
-    while($row = db_fetch_array($r)) {
-      if($row[0] == 'content_field_image_cache') {
-        $table_found = true;
-        break;
-      }
-    }
-    if($table_found) {
-      // if content_field_image_cache exists,
-      // see if we can find info on the current image
-      $result = db_fetch_object(db_query("SELECT c.nid, c.field_image_cache_title, c.field_image_cache_alt FROM {content_field_image_cache} c INNER JOIN {files} f ON c.field_image_cache_fid=f.fid WHERE f.filepath = '%s'", $image->source));
-    }
-    if ($result) {
-      $caption['title']=$result->field_image_cache_title;
-      $caption['alt']=$result->field_image_cache_alt;
-      $caption['node']=node_load($result->nid);
-    }
-  }
-*/
-  // TODO more info, like supporting data for image.module image info
-
-  // Load the attached node
   static $panic; #This can trigger recursion! build-load-build-etc
   if ($panic) return;
-  $panic=TRUE;
-  $node = textactions_node_from_filepath($image->source) ;
+  $panic = TRUE;
+  $node = textactions_node_from_filepath($image->source, $file_data) ;
   $panic = FALSE;
-  
 
   // Process the php using drupal_eval (rather than eval), but with GLOBAL variables, so they can be passed successfully
   $GLOBALS['image'] = $image;
   $GLOBALS['node'] = $node;
+  $GLOBALS['file_data'] = $file_data;
   
-  $text = drupal_eval('<'.'?php global $node; global $image; '.$action['text'].' ?'.'>');
-  #$text = eval($action['text']);
+  $text = @drupal_eval('<'.'?php global $node; global $image; global $file_data; '.$action['text'].' ?'.'>');
   $text = check_plain($text);
 
   return $text;
 }
 
+/**
+ * Given only a file filename, track back to see if we can detect the parent
+ * node and provide some context info.
+ * 
+ * This will be different in different cases.
+ * Supported :
+ * image.module image nodes
+ * imagefield cck fields (may be multiple)
+ * TODO:
+ * upload.module attachments
+ * image_attach attachments
+ */
+function textactions_node_from_filepath($filepath, &$file_data = NULL) {
 
-function textactions_node_from_filepath($filepath) {
-  $sql = "SELECT nid FROM {image} INNER JOIN {files} AS f WHERE f.filepath = '%s' LIMIT 1";
-  if ( $nid = db_result(db_query($sql, $filepath))){
-    return node_load($nid);
+  // lookup upload.module attachments
+  if (module_exists('upload')) {
+    $sql = "SELECT nid, f.fid FROM {upload} INNER JOIN {files} AS f WHERE f.filepath = '%s' LIMIT 1";
+    $results = db_query($sql, $filepath);
+    if ( $row = db_fetch_array($results)) {
+      // Return immediately
+      $node = node_load($row['nid']);
+      // also include the file description
+      $file_data = $node->files[$row['fid']];
+      return $node;
+    }
+  }
+
+  // Lookup image.module nodes
+  if (module_exists('image')) {
+    $sql = "SELECT nid FROM {image} INNER JOIN {files} AS f WHERE f.filepath = '%s' LIMIT 1";
+    if ( $nid = db_result(db_query($sql, $filepath))){
+      // Return immediately
+      return node_load($nid);
+    }
+  }
+
+
+  // Lookup filefield imagefield CCK attachments.
+  //
+  // Drupal 6 version here based largely on work done by mikeytown2 
+  // http://drupal.org/node/363434
+  
+  // Multiple file ID's might have the same name, get all 
+  // (but return just the first successful match)
+  $result = db_query("SELECT fid FROM {files} WHERE filepath = '%s'", $filepath);
+  $fids = array();
+  while ($row = db_fetch_array($result)) {
+    $fids[] = $row['fid'];
+  }
+
+  if (! empty($fids)) {
+    // Find out if any filefield contains this file, and if so, which field
+    // and node it belongs to. Required for later access checking.
+    // CCK filed analysis is in the outer loop, fids are scanned in the inner loop for a little speed.
+
+    // Get A List Of All CCK Fields, it's the only we we can reverse the lookups
+    foreach (content_fields() as $field) {
+      // If Field is an Image (imagefield.module) or filefield then
+      if ($field['type'] == 'image' || $field['type'] == 'filefield') {
+        // Need to do lots of lookups to find out what the storage tables look like.
+        // Grab All DB Column Names for that CCK Field
+        $db_info = content_database_info($field);
+        // Get Content Type DB name - FROM statement
+        $tablename = $db_info['table'];
+        //Get File ID DB Column Name - WHERE statement
+        $fid_column = $db_info['columns']['fid']['column'];
+
+        // Construct a Query that looks for all known fids in one go.
+        // eg:
+        // SELECT nid FROM content_type_story 
+        //   WHERE field_illustration_fid = 77 
+        //   OR field_illustration_fid = 99;
+        
+        $wheres = array();
+        $query_args = array();
+        foreach ($fids as $fid) {
+          $wheres[] = " %s = %d ";
+          $query_args[] = $fid_column; 
+          $query_args[] = $fid; 
+        }
+        $result = db_query("SELECT nid FROM {$tablename} WHERE ". join(' OR ', $wheres), $query_args);
+        while ($row = db_fetch_array($result)) {
+          // This while is a dummy loop - Just break out and return the first matching node. 
+          // If more than one node owns this image then ???
+          $node = node_load($row['nid']);
+
+          // Add even more info - the description data that MAY have been added to this file on this node.
+          // return the data associated with this file also;
+          // Slightly mushed together - I want it to mostly resemble the traditional file attachment object.
+          // We have the node but lost track of the file
+          // Need to scan again to make sure we got the right one :-{
+          if( $file_fields = $node->{$field['field_name']} ) {
+            foreach($file_fields as $file_field) {
+              if ($file_field['fid'] == $fid) {
+                $file_data = (object) array_merge($file_field['data'], $file_field);
+              }
+            }
+          }
+          return $node;
+        }
+      }
+    }
   }
 }
 
