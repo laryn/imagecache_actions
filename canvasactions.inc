@@ -568,3 +568,78 @@ function theme_canvasactions_roundedcorners($element) {
   return "Radius: {$data['radius']}px " . ($data['antialias'] ? "antialiased" : "") ;
 }
 
+///////////////////////////////////////////////////////////////////
+
+/**
+ * Switch between presets depending on logic
+ * 
+ * Implementation of imagecache_hook_form()
+ *
+ * @param $action array of settings for this action
+ * @return a form definition
+ */
+function canvasactions_aspect_form($action) {
+  $defaults = array(
+  );
+  $action = array_merge($defaults, (array)$action);
+  
+  $form = array(
+    'help' => array(
+      '#type' => 'markup',
+      '#value' => t('You must create the two presets to use <em>before</em> enabling this process.'),
+    )
+  );
+
+  $presets = array();
+  foreach (imagecache_presets(TRUE) as $preset) {
+    $presets[$preset['presetid']] = $preset['presetname'];
+  }
+
+  $form['portrait'] = array(
+    '#type' => 'select',
+    '#title' => t('Preset to use if the image is portrait (vertical)'),
+    '#default_value' => $action['portrait'],
+    '#options' => $presets,
+  );
+  $form['landscape'] = array(
+    '#type' => 'select',
+    '#title' => t('Preset to use if the image is landscape (horizontal)'),
+    '#default_value' => $action['landscape'],
+    '#options' => $presets,
+  );
+  return $form;
+}
+
+
+/**
+ * Implementation of theme_hook() for imagecache_ui.module
+ */
+function theme_canvasactions_aspect($element) {
+  $action = $element['#value'];
+  $presets = imagecache_presets(TRUE); 
+  return 'Portrait size: <strong>'. $presets[$action['portrait']]['presetname'] . '</strong>. Landscape size: <strong>'. $presets[$action['landscape']]['presetname'] .'</strong>' ;
+}
+
+/**
+ * Choose the action and trigger that.
+ * 
+ * Implementation of hook_image()
+ *
+ *
+ * @param $image
+ * @param $action
+ */
+function canvasactions_aspect_image(&$image, $action = array()) {
+  $preset_id = ($image->info['width'] > $image->info['height'] ) ? $action['landscape'] : $action['portrait'];
+  $preset = imagecache_preset($preset_id);
+
+  // Run the preset actions ourself. Cannot invoke a preset from the top as it handles filenames, not image objects.
+  // ripped from imagecache_build_derivative()
+  foreach ($preset['actions'] as $sub_action) {
+    _imagecache_apply_action($sub_action, $image);
+  }
+  return TRUE;
+}
+
+
+///////////////////////////////////////////////////////////////////

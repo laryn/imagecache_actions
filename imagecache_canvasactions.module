@@ -75,6 +75,12 @@ function imagecache_canvasactions_imagecache_actions() {
       'description' => t(' This is true cropping, not overlays, so the result <em>can</em> be transparent.'),
       'file' => 'canvasactions.inc',
     ),
+    'canvasactions_aspect' => array(
+      'name' => t('Aspect switcher: '),
+      'description' => t(' Use different effects depending on whether the image is landscape of portrait shaped. This re-uses other preset definitions, and just chooses between them based on the rule.'),
+      'file' => 'canvasactions.inc',
+    ),
+
   );
 
   return $actions;
@@ -211,9 +217,9 @@ function imagecache_canvasactions_theme() {
       'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
-    
-    
-
-
+    'canvasactions_aspect' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
   );
 }
