@@ -244,6 +244,7 @@ function canvasactions_canvas2file_form($action) {
     '#title' => t('file name'),
     '#default_value' => $action['path'],
     '#description' => t('File may be in the "files/" folder, or relative to the Drupal siteroot.'),
+    '#element_validate' => array('canvasactions_file2canvas_validate_file'),
   );
   $form['dimensions'] = array(
     '#type' => 'radios',
@@ -268,19 +269,25 @@ function theme_canvasactions_canvas2file($element) {
  *
  * Implementation of hook_image()
  *
+ * Note - this is currently incompatable with imagemagick, due to the way it
+ * addresses $image->resource directly - a gd only thing.
  *
  * @param $image
  * @param $action
  */
 function canvasactions_canvas2file_image(&$image, $action = array()) {
   // search for full (siteroot) paths, then file dir paths, then relative to the current theme
-  if (file_exists($action['path'])) {
-    $underlay = imageapi_image_open($action['path']);
+  $filepath = $action['path'];
+  if (!file_exists($filepath) ) {
+    $filepath = file_create_path($action['path']);
   }
-  else if (file_exists(file_create_path($action['path']))) {
-    $underlay = imageapi_image_open(file_create_path($action['path']));
+  if (! file_exists($filepath) ) {
+    trigger_error("Failed to load underlay image $filepath.", E_USER_ERROR);
+    return FALSE;
   }
   
+  $underlay = imageapi_image_open($filepath);
+
   // To handle odd sizes, we will resize/crop the background image to the desired dimensions before 
   // starting the merge. The built-in imagecopymerge, and the watermark library both do not
   // allow overlays to be bigger than the target.
@@ -292,25 +299,28 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
       $crop_rules['height']  = $image->info['height'];
       break;
     case 'background' :
-      $crop_rules['width'] = imagesx($underlay->res);
-      $crop_rules['height'] = imagesy($underlay->res);;
+      $crop_rules['width'] = $underlay->info['width'];
+      $crop_rules['height'] = $underlay->info['height'];
       break;
     case 'minimum' :
-      $crop_rules['width'] = min(imagesx($underlay->res), $image->info['width']);
-      $crop_rules['height'] = min(imagesy($underlay->res), $image->info['height']);
+      $crop_rules['width'] = min($underlay->info['width'], $image->info['width']);
+      $crop_rules['height'] = min($underlay->info['height'], $image->info['height']);
       break;
     case 'maximum' :
-      $crop_rules['width'] = max(imagesx($underlay->res), $image->info['width']);
-      $crop_rules['height'] = max(imagesy($underlay->res), $image->info['height']);
+      $crop_rules['width'] = max($underlay->info['width'], $image->info['width']);
+      $crop_rules['height'] = max($underlay->info['height'], $image->info['height']);
       break;
   }
   // imageapi crop assumes upsize is legal.
+  imagecache_include_standard_actions(); // ensure the library is loaded.
+
+  // crop both before processing to avoid unwanted processing.
   imagecache_crop_image($underlay, $crop_rules);
+  imagecache_crop_image($image, $crop_rules);
   
   // This func modifies the underlay image by ref, placing the current canvas on it
-  if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'])) {
-    $image->res = $underlay->res;
-    
+  if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'], TRUE)) {
+    $image->resource = $underlay->resource;
     return TRUE;
   }
 }
