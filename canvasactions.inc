@@ -192,18 +192,18 @@ function canvasactions_definecanvas_image(& $image, $action = array()) {
     $background = imagecolorallocatealpha($newcanvas, 255, 255, 255, 127);
     imagesavealpha($newcanvas, TRUE);
     imagealphablending($newcanvas, false);
-    imagesavealpha($image->res, TRUE);
+    imagesavealpha($image->resource, TRUE);
   }
   imagefilledrectangle($newcanvas, 0, 0, $targetsize['width'], $targetsize['height'], $background);
   
   if ($action['under']) {
     require_once('watermark.inc');
     $watermark = new watermark();
-    $image->res = $watermark->create_watermark($newcanvas, $image->res, $targetsize['left'], $targetsize['top'], 100);
-    imagesavealpha($image->res, TRUE);
+    $image->resource = $watermark->create_watermark($newcanvas, $image->resource, $targetsize['left'], $targetsize['top'], 100);
+    imagesavealpha($image->resource, TRUE);
   } 
   else {
-    $image->res = $newcanvas ;
+    $image->resource = $newcanvas ;
   }
   
   $image->info['width'] = $targetsize['width'];
@@ -488,7 +488,7 @@ function canvasactions_roundedcorners_image(&$image, $action = array()) {
   // Is using the toolkit really worth the bother?
   // Just doing it in an attempt to be consistent
   $mask_image = (object)array(
-    'res' => &$mask, 
+    'resource' => &$mask, 
     'info' => array('width' => $width, 'height' => $height, 'extension' => 'png'), 
     'toolkit' => $image->toolkit,
   );
@@ -515,7 +515,7 @@ function canvasactions_roundedcorners_image(&$image, $action = array()) {
   if ($action['antialias']) {
     // Use toolkit so scale down again. 
     imageapi_image_scale($mask_image, $width/3, $height/3);
-    $mask = $mask_image->res;
+    $mask = $mask_image->resource;
   }
   // No we have a mask. Merge to get a result
   #$image->res = $mask;  
@@ -538,12 +538,14 @@ function canvasactions_mask(&$image, $mask) {
   // Slow, I know.
   $info = $image->info;
   if (!$info) { return FALSE; }
-  $img = &$image->res;
-  $msk = &$mask->res;
-  
-  imagesavealpha($image->res, TRUE);
-  imagealphablending($image->res, FALSE);
+  $img = &$image->resource;
+  $msk = &$mask->resource;
+  imagesavealpha($image->resource, TRUE);
+  imagealphablending($image->resource, FALSE);
 
+  // Support indexed color (gif) if I have to
+  $transparent_ix = imagecolortransparent($image->resource);
+    
   $width = imagesx($img);  // Use the actual, not claimed image size.
   $height = imagesy($img);
   for ($i = 0; $i < $height; $i++) { //this loop traverses each row in the image
@@ -553,6 +555,9 @@ function canvasactions_mask(&$image, $mask) {
       $color_ix = imagecolorat($img, $j, $i); // an index
       $rgba_array = imagecolorsforindex($img, $color_ix);
       
+      // support indexed trans
+      if ($color_ix == $transparent_ix) { $rgba_array['alpha'] = 127; }
+      
       // Get the alpha of the corresponding mask pixel
       $mask_color_ix = imagecolorat($msk, $j, $i); // an index
       $msk_rgba_array = imagecolorsforindex($msk, $mask_color_ix);
@@ -561,8 +566,14 @@ function canvasactions_mask(&$image, $mask) {
       $rgba_array['alpha'] = max($msk_rgba_array['alpha'], $rgba_array['alpha']);
 
       //paint the pixel
-      $color_to_paint = imagecolorallocatealpha($image->res, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
-      imagesetpixel($image->res, $j, $i, $color_to_paint);  
+      if($image->info['mime_type'] == 'image/gif') {
+        // indexed color - re-use existing pallette
+        $color_to_paint = imagecolorclosestalpha($image->resource, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
+      }
+      else {
+        $color_to_paint = imagecolorallocatealpha($image->resource, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
+      }
+      imagesetpixel($image->resource, $j, $i, $color_to_paint);  
     }
   }
   return TRUE;
