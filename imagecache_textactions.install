@@ -2,10 +2,14 @@
 // $Id$
 
 function imagecache_textactions_install() {
-  imagecache_action_definitions(TRUE);
+  if (function_exists('imagecache_action_definitions')) {
+    imagecache_action_definitions(TRUE);
+  }
   cache_clear_all('imagecache_actions', 'cache');
 }
 function imagecache_textactions_uninstall() {
-  imagecache_action_definitions(TRUE);
+  if (function_exists('imagecache_action_definitions')) {
+    imagecache_action_definitions(TRUE);
+  }
   cache_clear_all('imagecache_actions', 'cache');
 }
