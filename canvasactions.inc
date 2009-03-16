@@ -557,18 +557,18 @@ function canvasactions_roundedcorners_image(&$image, $action = array()) {
     $width = $width * 3;
     $height = $height * 3;
     $radius = $radius * 3;
-    foreach ($radii as $corner => $radius) {
+    foreach ($radii as $corner => $corner_radius) {
       $radii[$corner] = $radii[$corner] * 3;
     }
   }
 
-  foreach ($radii as $corner => $radius) {
+  foreach ($radii as $corner => $corner_radius) {
     if(!$independent_corners){
       // Use the unique maths for independant corners, 
       // even if they are all the same.
       $radii[$corner] = $radius;
     }
-    $diameter[$corner] = $radius * 2;
+    $diameter[$corner] = $radii[$corner] * 2;
   }
   
   // Create a mask with rounded corners
