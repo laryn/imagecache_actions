@@ -489,7 +489,7 @@ function canvasactions_roundedcorners_form($action) {
     'br' => t("Bottom Right Radius"),
   );
   // Loop over the four corners and create field elements for them.
-  $form['independent_corners_set']['radii'] = array('#type' => 'item');
+  $form['independent_corners_set']['radii'] = array('#type' => 'item', '#id' => 'independent-corners-set', );
   foreach ($corners as $attribute => $label) {
     $form['independent_corners_set']['radii'][$attribute] = array(
         '#type' => 'textfield',
@@ -683,7 +683,7 @@ function theme_canvasactions_roundedcorners($element) {
   } else { 
     $dimens = "Radius: {$data['radius']}px "; 
   }
-  return $dimens . ($data['antialias'] ? "antialiased" : "") ;
+  return $dimens ." | ". ($data['antialias'] ? "antialiased" : "") ;
 }
 
 ///////////////////////////////////////////////////////////////////
