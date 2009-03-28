@@ -34,7 +34,7 @@
  *
  *   $image->info array
  *
- *   $image->res handle on the image object
+ *   $image->resource handle on the image object
  *
  * @param $action array of settings as defined in your form.
  *
@@ -153,14 +153,6 @@ function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha, $reverse = 
     return TRUE;
   }
   // else imagecopymerge fails and we have to use the slow library 
-
-  // imagecopymerge doesn't do alpha transparency right?
-  //imagealphablending($image->res, false);
-  //imagesavealpha($image->res, TRUE);
-  //imagealphablending($layer->res, false);
-  //imagesavealpha($layer->res, TRUE);
-  // imagecopymerge($image->res, $layer->res, $x_ins, $y_ins, 0, 0, $layer->info['width'], $layer->info['height'], $alpha);
-  // Silly thing, it's easy. Use the attached library below instead
 
   require_once('watermark.inc');
   $watermark = new watermark();
