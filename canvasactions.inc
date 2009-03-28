@@ -163,7 +163,7 @@ function theme_canvasactions_definecanvas($element) {
  *
  *   $image->info array
  *
- *   $image->res handle on the image object
+ *   $image->resource handle on the image object
  */
 function canvasactions_definecanvas_image(&$image, $action = array()) {
   if ($image->toolkit != 'imageapi_gd') {
