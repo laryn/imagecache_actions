@@ -41,7 +41,7 @@
  */
 
 // During devel, caching is pointless. Flush it
- imagecache_action_definitions(TRUE);
+// imagecache_action_definitions(TRUE);
 
 require_once('utility.inc');
 

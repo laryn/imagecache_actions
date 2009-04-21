@@ -251,15 +251,3 @@ function imagecache_convert_image(&$image, $data = array()) {
 function imagecache_file_formats() {
   return array('image/jpeg' => 'jpg', 'image/gif' => 'gif', 'image/png' => 'png');
 }
-
-
-
-
-  
-/**
- * Need to flush the cache when this module is enabled
- */
-function imagecache_coloractions_install() {
-  imagecache_action_definitions(TRUE);
-  drupal_set_message(t('Additional imagecache actions should now be available in the presets !settings_link', array('!settings_link' => l(t('settings'), 'admin/build/imagecache'))));
-}

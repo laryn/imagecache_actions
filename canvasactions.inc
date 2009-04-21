@@ -605,6 +605,7 @@ function canvasactions_roundedcorners_image(&$image, $action = array()) {
 function canvasactions_mask(&$image, $mask) {
   // I do not believe there is a func for this, so I'll do it pixel-by-pixel
   // Slow, I know.
+
   $info = $image->info;
   if (!$info) { return FALSE; }
   $img = &$image->res;
