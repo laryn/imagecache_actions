@@ -135,7 +135,7 @@ function theme_canvasactions_definecanvas($element) {
  *
  *   $image->info array
  *
- *   $image->res handle on the image object
+ *   $image->resource handle on the image object
  */
 function canvasactions_definecanvas_image(& $image, $action = array()) {
  
@@ -176,18 +176,18 @@ function canvasactions_definecanvas_image(& $image, $action = array()) {
     $background = imagecolorallocatealpha($newcanvas, 255, 255, 255, 127);
     imagesavealpha($newcanvas, TRUE);
     imagealphablending($newcanvas, false);
-    imagesavealpha($image->res, TRUE);
+    imagesavealpha($image->resource, TRUE);
   }
   imagefilledrectangle($newcanvas, 0, 0, $targetsize['width'], $targetsize['height'], $background);
   
   if ($action['under']) {
     require_once('watermark.inc');
     $watermark = new watermark();
-    $image->res = $watermark->create_watermark($newcanvas, $image->res, $targetsize['left'], $targetsize['top'], 100);
-    imagesavealpha($image->res, TRUE);
+    $image->resource = $watermark->create_watermark($newcanvas, $image->resource, $targetsize['left'], $targetsize['top'], 100);
+    imagesavealpha($image->resource, TRUE);
   } 
   else {
-    $image->res = $newcanvas ;
+    $image->resource = $newcanvas ;
   }
   
   $image->info['width'] = $targetsize['width'];
@@ -265,7 +265,7 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   }
   // This func modifies the underlay image by ref, placing the current canvas on it
   if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'])) {
-    $image->res = $underlay->res;
+    $image->resource = $underlay->resource;
     //$image = $underlay;
     return TRUE;
   }
@@ -584,7 +584,7 @@ function canvasactions_roundedcorners_image(&$image, $action = array()) {
   if ($action['antialias']) {
     // Use toolkit so scale down again. 
     imageapi_image_scale($mask_image, $width/3, $height/3);
-    $mask = $mask_image->res;
+    $mask = $mask_image->resource;
   }
 
   // Now we have a mask. Merge to get a result
@@ -608,13 +608,13 @@ function canvasactions_mask(&$image, $mask) {
 
   $info = $image->info;
   if (!$info) { return FALSE; }
-  $img = &$image->res;
-  $msk = &$mask->res;
-  imagesavealpha($image->res, TRUE);
-  imagealphablending($image->res, FALSE);
+  $img = &$image->resource;
+  $msk = &$mask->resource;
+  imagesavealpha($image->resource, TRUE);
+  imagealphablending($image->resource, FALSE);
 
   // Support indexed color (gif) if I have to
-  $transparent_ix = imagecolortransparent($image->res);
+  $transparent_ix = imagecolortransparent($image->resource);
     
   $width = imagesx($img);  // Use the actual, not claimed image size.
   $height = imagesy($img);
@@ -638,12 +638,12 @@ function canvasactions_mask(&$image, $mask) {
       //paint the pixel
       if($image->info['mime_type'] == 'image/gif') {
         // indexed color - re-use existing pallette
-        $color_to_paint = imagecolorclosestalpha($image->res, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
+        $color_to_paint = imagecolorclosestalpha($image->resource, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
       }
       else {
-        $color_to_paint = imagecolorallocatealpha($image->res, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
+        $color_to_paint = imagecolorallocatealpha($image->resource, $rgba_array['red'], $rgba_array['green'], $rgba_array['blue'], $rgba_array['alpha']);
       }
-      imagesetpixel($image->res, $j, $i, $color_to_paint);  
+      imagesetpixel($image->resource, $j, $i, $color_to_paint);  
     }
   }
   return TRUE;
