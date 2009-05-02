@@ -210,7 +210,10 @@ function imagecache_inverse_image(&$image, $data = array()) {
  * @return bool success
  */
 function imagecache_imagefilter($image, $data) {
-
+  if ($image->toolkit != 'imageapi_gd') {
+    drupal_set_message("Imagefilter is only currently supported for GD toolkit. Code welcome.", 'error');
+    return FALSE;
+  }
   if (! imagecache_gd_imagefilter($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL)) {
     watchdog('imagecache', 'imagecache_imagefilter failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
     return FALSE;

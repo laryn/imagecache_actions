@@ -204,11 +204,13 @@ function canvasactions_definecanvas_image(&$image, $action = array()) {
     // No color, attempt transparency, assume white
     $background = imagecolorallocatealpha($newcanvas, 255, 255, 255, 127);
     imagesavealpha($newcanvas, TRUE);
-    imagealphablending($newcanvas, false);
+    imagealphablending($newcanvas, FALSE);
     imagesavealpha($image->resource, TRUE);
   }
   imagefilledrectangle($newcanvas, 0, 0, $targetsize['width'], $targetsize['height'], $background);
-  
+
+#  imagealphablending($newcanvas, TRUE);
+
   if ($action['under']) {
     require_once('watermark.inc');
     $watermark = new watermark();
@@ -333,8 +335,9 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
 
   // crop both before processing to avoid unwanted processing.
   imagecache_crop_image($underlay, $crop_rules);
-  imagecache_crop_image($image, $crop_rules);
-  
+  // Actually this failes because imagecache_crop fills it with solid color when 'cropping' to a larger size.
+  #imagecache_crop_image($image, $crop_rules);
+
   // This func modifies the underlay image by ref, placing the current canvas on it
   if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'], TRUE)) {
     $image->resource = $underlay->resource;
@@ -420,10 +423,10 @@ function theme_canvasactions_file2canvas($element) {
 function canvasactions_file2canvas_image(&$image, $action = array()) {
   // search for full (siteroot) paths, then file dir paths, then relative to the current theme
   if (file_exists($action['path'])) {
-    $overlay = imageapi_image_open($action['path']);
+    $overlay = imageapi_image_open($action['path'], $image->toolkit);
   }
   else if (file_exists(file_create_path($action['path']))) {
-    $overlay = imageapi_image_open(file_create_path($action['path']));
+    $overlay = imageapi_image_open(file_create_path($action['path']), $image->toolkit);
   }
   if (! isset($overlay) || ! $overlay) {
     trigger_error(t("Failed to find overlay image %path for imagecache_actions file-to-canvas action. File was not found in the sites 'files' path or the current theme folder.", array('%path' => $action['path'])), E_USER_WARNING);
@@ -432,6 +435,62 @@ function canvasactions_file2canvas_image(&$image, $action = array()) {
   return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);
 }
 
+
+///////////////////////////////////////////////////////////////////
+
+/**    
+ * Place the source image on top of the current canvas    
+ * 
+ * Implementation of imagecache_hook_form()
+ *    
+ *    
+ *    
+ * @param $action array of settings for this action   
+ * @return a form definition    
+ */   
+function canvasactions_source2canvas_form($action) {    
+  $defaults = array(    
+    'xpos' => '',   
+    'ypos' => '',   
+    'alpha' => '100',   
+    'path' => '',   
+  );    
+  $action = array_merge($defaults, (array)$action);   
+    
+  $form = imagecacheactions_pos_form($action);    
+  $form['alpha'] = array(   
+      '#type' => 'textfield',   
+      '#title' => t('opacity'),   
+      '#default_value' => $action['alpha'],   
+      '#size' => 6,   
+      '#description' => t('Opacity: 0-100.'),   
+  );    
+  return $form;   
+}   
+
+
+     
+/**   
+ * Implementation of theme_hook() for imagecache_ui.module    
+ */   
+function theme_canvasactions_source2canvas($element) {    
+  $data = $element['#value'];   
+  return 'xpos:'. $data['xpos'] .', ypos:'. $data['ypos'] .' alpha:'. $data['alpha'] .'%' ;   
+}
+
+/**    
+  * Place the source image on the current background   
+  *    
+  * Implementation of hook_image()   
+  *    
+  *    
+  * @param $image    
+  * @param $action   
+  */   
+function canvasactions_source2canvas_image(&$image, $action = array()) {    
+  $overlay = imageapi_image_open($image->source); // this probably means opening the image twice. c'est la vie    
+  return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);      
+}
 
 ///////////////////////////////////////////////////////////////////
 

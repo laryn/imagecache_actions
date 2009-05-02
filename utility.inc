@@ -48,6 +48,7 @@ function imagecacheactions_pos_form($action) {
       '#default_value' => $action['xpos'],
       '#size' => 6,
       '#description' => t('Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>.'),
+      '#element_validate' => array('imagecache_actions_validate_number'),
     ),
     'ypos' => array(
       '#type' => 'textfield',
@@ -55,9 +56,19 @@ function imagecacheactions_pos_form($action) {
       '#default_value' => $action['ypos'],
       '#size' => 6,
       '#description' => t('Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>.'),
+      '#element_validate' => array('imagecache_actions_validate_number'),
     ),
   );
   return $form;
+}
+
+/**
+ * Ensure the numbers are valid.
+ * 
+ * Set blanks to zero, just so the status summary doesn't get odd blanks
+ */
+function imagecache_actions_validate_number(&$element, &$form_state) {
+  if(empty($element['value'])) form_set_value($element, 0, $form_state);
 }
 
 function imagecache_actions_validate_alpha(&$element, &$form_status) {
@@ -148,6 +159,86 @@ function hex_to_rgb($hex) {
 
   return $rgb ;
 }
+
+/**
+ * Accept a keyword (center, top, left, etc) and return it as an offset in pixels.
+ * Called on either the x or y values.
+ * 
+ * May  be something like "20", "center", "left+20", "bottom+10". + values are
+ * in from the sides, so bottom+10 is 10 UP from the bottom. 
+ * 
+ * "center+50" is also OK.
+ * 
+ * "30%" will place the CENTER of the object at 30% across. to get a 30% margin,
+ * use "left+30%"
+ * 
+ * @param $value 
+ *   string or int value. 
+ * @param $current_size
+ *   int size in pixels of the range this item is to be placed in
+ * @param $object_size
+ *   int size in pixels of the object to be placed
+ * 
+ * 
+ */
+function imagecache_actions_keyword_filter($value, $current_size, $object_size) {
+  $keyword = 0; 
+  $offset = 0;
+  
+  // Check if we have plus or minus values
+  $keyword_split = explode('+', $value);
+  $keyword = $keyword_split[0];
+  if (! empty($keyword_split[1]) ) {
+    $offset = $keyword_split[1];
+  }
+  if (strstr($value, '-')) {
+    $k2 = explode('-', $value);
+    $keyword = $k2[0];
+    $offset = -intval($k2[1]);
+  }
+
+  // handle % values
+  if (substr($value, strlen($value), 1) == '%') {
+    $percent = TRUE;
+    $offset = intval($offset);
+    $value = intval($value / 100 * $current_size);
+    if (! $keyword) {
+      // just said eg '25%' - so center the object there
+      $offset = $object_size / -2;
+    } 
+    else {
+      // Otherwise the keyword will give us the new value, and the % will be its offset
+      $offset = intval($offset / 100 * $current_size);
+    }
+  }
+
+
+  // Whether the value is 'top or left doesn't matter, treat both axes the same.
+  switch ($keyword) {
+    case 'top':
+    case 'left':
+      $value = 0;
+      break;
+    case 'bottom':
+    case 'right':
+      $value = $current_size - $object_size;
+      $offset = -1 * $offset;
+      break;
+    case 'center':
+      $value = $current_size/2 - $object_size/2;
+      break;
+    default :
+      // if no keyword, it was a raw number - assume top left then
+      $value = intval($value);
+  }
+  #dpm("Placing an object $object_size big on a range of $current_size at a position of $value , $offset");  
+  // Add any extra negative or positive
+  if (!empty($offset)) {
+    $value = $value + $offset;
+  }
+  return $value;
+}
+
 
 /**
  * imagecache is conservative with its inclusion of inc files, but sometimes I

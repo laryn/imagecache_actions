@@ -406,6 +406,18 @@ function textactions_create_font_image( $size, $angle, $font, $char ) {
 
 /**
  * Accept a keyword (center, top, left, etc) and return it as an offset in pixels.
+ * Called on either the x or y values.
+ * 
+ * @param $value 
+ *   string or int value. May be something like "20", "center", "left+20"
+ * @param $current_size
+ *   int size in pixels of the range this item is to be placed in
+ * @param $object_size
+ *   int size in pixels of the object to be placed
+ * 
+ * @param $xy
+ *   Whether the axis is on the x or the y (unused)
+ * 
  */
 function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, $xy) {
   // check if we have plus or minus values
@@ -444,7 +456,6 @@ function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, 
  */
 function imageapi_image_overlaytext_alpha(&$image, $text, $size = 12, $x = 0, $y = 0, $RGB = 0, $fontfile = 'MgOpenModernaBold', $angle = 0) {
   return imageapi_toolkit_invoke('overlaytext_alpha', $image, array($text, $size, $x, $y, $RGB, $fontfile, $angle));
-  #return call_user_func($image->toolkit .'_image_overlaytext_alpha', $image, $text, $size, $x, $y, $RGB, $fontfile, $angle);
 }
 
 /**
