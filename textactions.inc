@@ -237,7 +237,6 @@ $table_found = TRUE;
   
   $text = drupal_eval('<'.'?php global $caption; '.$action['text'].' ?'.'>');
   $text = eval($action['text']);
-  $text = check_plain($text);
 
   return $text;
 }
