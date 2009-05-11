@@ -256,7 +256,6 @@ function textactions_evaluate_text($image, $action) {
   $GLOBALS['file_data'] = $file_data;
   
   $text = @drupal_eval('<'.'?php global $node; global $image; global $file_data; '.$action['text'].' ?'.'>');
-  $text = check_plain($text);
 
   return $text;
 }
