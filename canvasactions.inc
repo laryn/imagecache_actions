@@ -22,7 +22,6 @@ function canvasactions_definecanvas_form($action) {
   if (imageapi_default_toolkit() != 'imageapi_gd') {
     drupal_set_message('Define Canvas not currently supported by using imagemagick. This effect requires GD image toolkit only.', 'warning');
   }
-
   $defaults = array(
     'RGB' => array(
       'HEX' => '#333333',
@@ -31,6 +30,8 @@ function canvasactions_definecanvas_form($action) {
     'exact' => array( 
       'width' => '',
       'height' => '',
+      'xpos' => '',
+      'ypos' => '',
     ),
     'relative' => array(
       'leftdiff' => '10',

@@ -68,7 +68,7 @@ function imagecacheactions_pos_form($action) {
  * Set blanks to zero, just so the status summary doesn't get odd blanks
  */
 function imagecache_actions_validate_number(&$element, &$form_state) {
-  if(empty($element['value'])) form_set_value($element, 0, $form_state);
+  if(empty($element['#value'])) form_set_value($element, 0, $form_state);
 }
 
 function imagecache_actions_validate_alpha(&$element, &$form_status) {
