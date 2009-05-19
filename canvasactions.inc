@@ -30,14 +30,14 @@ function canvasactions_definecanvas_form($action) {
     'exact' => array( 
       'width' => '',
       'height' => '',
-      'xpos' => '',
-      'ypos' => '',
+      'xpos' => 'center',
+      'ypos' => 'center',
     ),
     'relative' => array(
-      'leftdiff' => '10',
-      'rightdiff' => '10',
-      'topdiff' => '10',
-      'bottomdiff' => '10',
+      'leftdiff' => '',
+      'rightdiff' => '',
+      'topdiff' => '',
+      'bottomdiff' => '',
     ),
   );
   $action = array_merge($defaults, (array)$action);
