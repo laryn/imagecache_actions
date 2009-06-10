@@ -120,7 +120,7 @@ return $image;
  */
 function imagecache_customactions_image($image, $action) {
   // Pull the images $width and $height out to play
-  extract($image->info);
+  @extract($image->info);
   // And maybe the owner node data could be useful
   if (function_exists('imagecache_actions_node_from_filepath')) {
     $node = imagecache_actions_node_from_filepath($image->source);
