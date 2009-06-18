@@ -271,7 +271,7 @@ function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
 
   // lookup upload.module attachments
   if (module_exists('upload')) {
-    $sql = "SELECT nid, f.fid FROM {upload} AS u INNER JOIN {files} AS f N u.fid = f.fid WHERE f.filepath = '%s' LIMIT 1";
+    $sql = "SELECT nid, f.fid FROM {upload} AS u INNER JOIN {files} AS f ON u.fid = f.fid WHERE f.filepath = '%s' LIMIT 1";
     $results = db_query($sql, $filepath);
     if ( $row = db_fetch_array($results)) {
       // Return immediately
