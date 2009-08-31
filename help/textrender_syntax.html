@@ -1,0 +1,54 @@
+<html>
+<body>
+      <p>
+        When rendering text on an image, 
+        enter PHP code that will <b>return</b> your dynamic text. Do not use &lt;?php  ?&gt; tags. 
+        <br />EG 
+        <br /><code>return format_date(time());</code>  
+        <br /><code>return $file_data->description ? $file_data->description : $node->title;</code>
+      </p>
+      <p>Note that executing incorrect PHP-code can break your Drupal site.</p>
+
+      <h4>Many different types of data derived from the image may be available as php values:</h4>
+      <p>$node, $file_data, $image</p>
+      <p>
+        If it's an <b>image.module image</b> then a <b>$node</b> object with its values 
+        <em>may</em> be available.
+        <br/><code>return $node->title;</code>
+        <br/><code>return format_date($node->created);</code>
+      </p>
+
+      <p>
+        If it's an image that has been attached to a node using <b>CCK filefield imagefield</b>
+        (or just filefield)
+        then as well as the parent <b>$node</b> object,
+        a <b>$file_data</b> object that may contain a file description from that file field.
+        <br/><code>return $file_data->description;</code>
+        <br/>
+        <small>So far that seems to be the only available 'data' provided by filefield, 
+        but you can investigate the node structure using devel.module or print_r() 
+        to see what else this array actually contains</small>.
+      </p>
+      <p>
+        If it's a file that's just been <b>attached using upload.module</b>,
+        a <b>$file_data</b> object may also have a description.
+        <br/><code>return $file_data->description;</code>
+      </p>
+      <p>
+        If the image path is detected as belonging to more than one node, just the
+        data for the first one found is returned. 
+      </p>
+
+      <p>
+        An "<b>$image</b>" object is also available, but that usually contains only technical data, including 
+        <br/><code>return $image->source;</code>
+        <br/><code>return basename($image->source);</code>
+        <br/><code>return $image->info["filesize"];</code>
+      </p>
+      <p>
+        If you have <b>meta_inspector</b> available, then many more (namespaced) metadata fields
+        may be available on the <b>$file_data</b> object. Note that they will often be arrays.
+        <br /><code>$attname = "dc:creator"; return @reset($file_data->$attname);</code>
+      </p>
+</body>
+</html>
