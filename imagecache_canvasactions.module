@@ -118,7 +118,7 @@ function imagecache_canvasactions_imagecache_actions() {
  * 
  * @ingroup imageapi
  */
-function imageapi_image_overlay(&$image, $layer, $x, $y, $alpha = 100, $reverse = FALSE) {
+function imageapi_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
   if (is_string($layer) ) {
     if (! file_exists($layer)) {
       trigger_error("Image file does not exist. Attempted to overlay $layer", E_USER_ERROR);
@@ -180,21 +180,19 @@ function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reve
     imagesavealpha($layer->resource, TRUE);
     imagecopy($image->resource, $layer->resource, $x, $y, 0, 0, $layer->info['width'], $layer->info['height']);
     imagedestroy($layer->resource);
-    return TRUE;
   }
-  // else imagecopymerge fails and we have to use the slow library 
-
-  require_once('watermark.inc');
-  $watermark = new watermark();
-  $image->resource = $watermark->create_watermark($image->resource, $layer->resource, $x, $y, $alpha);
+  else {
+    // else imagecopymerge fails and we have to use the slow library 
+    require_once('watermark.inc');
+    $watermark = new watermark();
+    $image->resource = $watermark->create_watermark($image->resource, $layer->resource, $x, $y, $alpha);
+    imagedestroy($layer->resource);
+  }
 
   if ($reverse) {
     // When doing underlay, It's the second image object that we really care about. 
     // Update that with the result
     $layer->resource = $image->resource;
-  }
-  else {
-    imagedestroy($layer->resource);
   }
   
   return TRUE;

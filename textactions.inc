@@ -203,6 +203,7 @@ function textactions_text2canvas_image(&$image, $action = array()) {
   else {
     $text = $action['text'];
   }
+  $text = strip_tags($text);
 
   // Calculate position by first creating a temp image containing the text and accessing its dimensions
   $temp = textactions_create_font_image($action['size'], $action['angle'], $fontpath, $text );
@@ -233,24 +234,19 @@ function textactions_text2canvas_image(&$image, $action = array()) {
  * 
  * TODO further code review for safety etc
  * 
- * @param $image object, such as it is
+ * @param $image object, as provided by imageapi
  * @param $action definition
  * 
- * @return $text Plain string to be placed on the imagecache process.
+ * @return $text Plain or code string to be placed on the imagecache process.
  */
-function textactions_evaluate_text($image, $action) {
-  // Try to load the attached node - if any
+function MOVED_textactions_evaluate_text($image, $action) {
 
-  // This file_data object MAY be filled up with extra data (by ref) 
-  // when doing the lookup, eg 
-  // $file_data->description, $file_data->alt, $file_data->timestamp
-  
   // HOOK_metadata from file attempts to glean info from any direction possible - EXIF, XMP, DB, description.txt
   // @see the meta_* project
   $meta = module_invoke_all('metadata_from_file', $image->source);
   $file_data = (object) $meta;
 
-
+  // Try to load the attached node - if any
   static $panic; #This can trigger recursion! build-load-build-etc
   if ($panic) return;
   $panic = TRUE;
@@ -264,6 +260,11 @@ function textactions_evaluate_text($image, $action) {
   $GLOBALS['file_data'] = $file_data;
   
   $text = @drupal_eval('<'.'?php global $node; global $image; global $file_data; '.$action['text'].' ?'.'>');
+
+  // Warn about errors in the php code if I can
+  if (empty($text) && function_exists('error_get_last') && $last_error = error_get_last()) {
+    drupal_set_message("Problem evaluating dynamic text. <br/><code>{$action['text']}</code><br/> ". $last_error['message'], 'error');
+  }
 
   return $text;
 }

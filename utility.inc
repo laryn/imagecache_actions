@@ -239,6 +239,36 @@ function imagecache_actions_keyword_filter($value, $current_size, $object_size) 
   return $value;
 }
 
+/**
+ * Given two imageapi objects with dimensions, and some positioning values,
+ * calculate a new x,y for the layer to be placed at.
+ */
+function imagecache_actions_calculate_relative_position($base, $layer, $style) {
+  // $textimage should now have its size info available.
+  // Calc the position
+  if (!empty($style['top'])) {
+    $ypos = $style['top'];
+  }
+  if (!empty($style['bottom'])) {
+    $ypos = $base->info['height'] - ( $layer->info['height'] + $style['bottom']);
+  }
+  if (! isset($ypos)) {
+    // assume center
+    $ypos = ($base->info['height']/2) - ($layer->info['height']/2);
+  }
+
+  if (!empty($style['left'])) {
+    $xpos = $style['left'];
+  }
+  if (!empty($style['right'])) {
+    $xpos = $base->info['width'] - ( $layer->info['width'] + $style['right']);
+  }
+  if (! isset($xpos)) {
+    // assume center
+    $xpos = ($base->info['width']/2) - ($layer->info['width']/2);
+  }
+  return array('x' => $xpos, 'y' => $ypos);
+}
 
 /**
  * imagecache is conservative with its inclusion of inc files, but sometimes I

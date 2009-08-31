@@ -213,10 +213,21 @@ function canvasactions_definecanvas_image(&$image, $action = array()) {
 #  imagealphablending($newcanvas, TRUE);
 
   if ($action['under']) {
-    require_once('watermark.inc');
-    $watermark = new watermark();
-    $image->resource = $watermark->create_watermark($newcanvas, $image->resource, $targetsize['left'], $targetsize['top'], 100);
-    imagesavealpha($image->resource, TRUE);
+    $canvas_object = (object) array(
+      'resource' => $newcanvas,
+      'info' => array(
+        'width' => $targetsize['width'], 
+        'height' => $targetsize['height'],
+        'mime_type' => 'image/png',
+      ),
+      'toolkit' => $image->toolkit,
+    );
+    imageapi_image_overlay($canvas_object, $image, $targetsize['left'], $targetsize['top'], 100, TRUE);
+
+#    require_once('watermark.inc');
+#    $watermark = new watermark();
+#    $image->resource = $watermark->create_watermark($newcanvas, $image->resource, $targetsize['left'], $targetsize['top'], 100);
+#    imagesavealpha($image->resource, TRUE);
   } 
   else {
     $image->resource = $newcanvas ;
@@ -281,7 +292,7 @@ function canvasactions_canvas2file_form($action) {
  */
 function theme_canvasactions_canvas2file($element) {
   $data = $element['#value'];
-  return 'xpos:'. $data['xpos'] .', ypos:'. $data['ypos'] .' alpha:'. $data['alpha'] .'%' ;
+  return "xpos:{$data['xpos']} , ypos:{$data['ypos']} alpha:{$data['alpha']}%. file path:{$data['path']}, dimensions:{$data['dimensions']}" ;
 }
 
 /**
@@ -313,6 +324,7 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   // allow overlays to be bigger than the target.
   // Adjust size
   $crop_rules = array('xoffset' => 0, 'yoffset' => 0, );
+  if (empty($action['dimensions'])) $action['dimensions'] = 'original';
   switch ($action['dimensions']) {
     case 'original' :
       $crop_rules['width'] = $image->info['width'];
