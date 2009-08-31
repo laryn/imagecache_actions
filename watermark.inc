@@ -1,5 +1,5 @@
 <?php
-// $ID $
+// $Id$
 /**
  * @file routine for image layering
  * 
@@ -24,9 +24,8 @@ class watermark {
     # Should this change to match both images?
     $main_img_obj_w = max($base_img_obj_w, imagesx($watermark_img_obj));
     $main_img_obj_h = max($base_img_obj_h, imagesy($watermark_img_obj));
-    # dman: start with the MAX, then let the caller crop it later according to its own logic.
-    #$main_img_obj_w = imagesx($main_img_obj);
-    #$main_img_obj_h = imagesy($main_img_obj);
+    // dman: start with the MAX dimensions, 
+    // then let the caller crop it later according to its own logic.
     $watermark_img_obj_w = imagesx($watermark_img_obj);
     $watermark_img_obj_h = imagesy($watermark_img_obj);
 
@@ -34,8 +33,8 @@ class watermark {
     $main_img_obj_min_y = $y_ins;
 
     $return_img = imagecreatetruecolor($main_img_obj_w, $main_img_obj_h);
-    imagesavealpha($return_img, true);
-    imagealphablending($return_img, false);
+    imagesavealpha($return_img, TRUE);
+    imagealphablending($return_img, FALSE);
 
     // Support indexed color (gif) if I have to
     $transparent_ix = imagecolortransparent($main_img_obj);
@@ -59,7 +58,7 @@ class watermark {
         $watermark_x = $x - $main_img_obj_min_x;
         $watermark_y = $y - $main_img_obj_min_y;
 
-        if(($x < $base_img_obj_w) && ($y < $base_img_obj_h)) {
+        if (($x < $base_img_obj_w) && ($y < $base_img_obj_h)) {
           // try not to go out of bounds when looking for color.
           $main_rgb = imagecolorsforindex($main_img_obj, imagecolorat($main_img_obj, $x, $y));
         }

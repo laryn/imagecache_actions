@@ -1,5 +1,8 @@
 <?php
 // $Id$
+/**
+ * @file Set up new text actions. Tell imagecache.module about them
+ */
 
 /**
  * Need to flush the cache when this module is enabled or disabled

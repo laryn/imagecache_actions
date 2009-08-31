@@ -1,7 +1,7 @@
 <?php
-// $ID: $
+// $Id$
 /**
- * Helper functions for imagecache_textactions
+ * @file Helper functions for imagecache_textactions
  * 
  * Static rendertext and dynamic caption functions
  * 
@@ -66,7 +66,7 @@ function textactions_rendertext_form($action) {
       '#collapsible' => TRUE, 
       '#collapsed' => TRUE, 
       '#title' => t('PHP code help'),
-      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_textactions'). '/help/textrender_syntax.html'),
+      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_textactions') .'/help/textrender_syntax.html'),
     ),
   );
   if (! user_access('administer site configuration')) {
@@ -125,7 +125,7 @@ function textactions_rendertext_image(&$image, $action = array()) {
     'toolkit' => $image->toolkit,
   );
   
-  if(! imageapi_image_create_text($textimage, $text, $fontfile, $style) || empty($textimage->info) ) {
+  if (! imageapi_image_create_text($textimage, $text, $fontfile, $style) || empty($textimage->info) ) {
     drupal_set_message(t('Failed to generate text image using %toolkit. Not overlaying text.', array('%toolkit' => $textimage->toolkit )), 'error');
     return FALSE;
   }

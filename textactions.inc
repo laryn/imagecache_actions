@@ -1,7 +1,7 @@
 <?php
-// $ID: $
+// $Id$
 /**
- * Helper functions for imagecache_textactions
+ * @file Helper functions for imagecache_textactions
  * 
  * Static text2canvas and dynamic caption functions
  * 
@@ -208,7 +208,7 @@ function textactions_text2canvas_image(&$image, $action = array()) {
   // Calculate position by first creating a temp image containing the text and accessing its dimensions
   $temp = textactions_create_font_image($action['size'], $action['angle'], $fontpath, $text );
 
-  if(! $temp) {
+  if (! $temp) {
     drupal_set_message(t('Failed to generate text image. Cannot calculate text dimensions. Not overlaying text.'), 'error');
     return;
   }
@@ -218,7 +218,7 @@ function textactions_text2canvas_image(&$image, $action = array()) {
   $y_ins = textactions_keyword_filter($action['ypos'], $image->info['height'], $temp['height'], $temp['by'], 'y');
 
   // convert color from hex (as it is stored in the UI)
-  if($action['RGB']['HEX'] && $deduced = hex_to_rgb($action['RGB']['HEX'])) {
+  if ($action['RGB']['HEX'] && $deduced = hex_to_rgb($action['RGB']['HEX'])) {
     $action['RGB'] = array_merge($action['RGB'], $deduced);
   }
 
@@ -259,7 +259,7 @@ function MOVED_textactions_evaluate_text($image, $action) {
   $GLOBALS['node'] = $node;
   $GLOBALS['file_data'] = $file_data;
   
-  $text = @drupal_eval('<'.'?php global $node; global $image; global $file_data; '.$action['text'].' ?'.'>');
+  $text = @drupal_eval('<'.'?php global $node; global $image; global $file_data; '. $action['text'] .' ?'.'>');
 
   // Warn about errors in the php code if I can
   if (empty($text) && function_exists('error_get_last') && $last_error = error_get_last()) {
@@ -276,26 +276,28 @@ function MOVED_textactions_evaluate_text($image, $action) {
  */
 function textactions_create_font_image( $size, $angle, $font, $char ) {
     $rect = imagettfbbox( $size, 0, $font, $char );
-    if(!$rect) {
+    if (!$rect) {
       return NULL;
     }
-    if( 0 == $angle ) {
+    if ( 0 == $angle ) {
         $imh = $rect[1] - $rect[7];
         $imw = $rect[2] - $rect[0];
         $bx = -1 - $rect[0];
         $by = -1 - $rect[7];
-    } else {
+    } 
+    else {
         $rad = deg2rad( $angle );
         $sin = sin( $rad );
         $cos = cos( $rad );
-        if( $angle > 0 ) {
+        if ( $angle > 0 ) {
             $tmp = $rect[6] * $cos + $rect[7] * $sin;
             $bx = -1 - round( $tmp );
             $imw = round( $rect[2] * $cos + $rect[3] * $sin - $tmp );
             $tmp = $rect[5] * $cos - $rect[4] * $sin;
             $by = -1 - round( $tmp );
             $imh = round( $rect[1] * $cos - $rect[0] * $sin - $tmp );
-        } else {
+        } 
+        else {
             $tmp = $rect[0] * $cos + $rect[1] * $sin;
             $bx = -1 - round( $tmp );
             $imw = round( $rect[4] * $cos + $rect[5] * $sin - $tmp );
@@ -305,7 +307,7 @@ function textactions_create_font_image( $size, $angle, $font, $char ) {
         }
     }
   
-  return array('width'=>$imw, 'height'=>$imh, 'bx'=>$bx, 'by'=>$by);
+  return array('width' => $imw, 'height' => $imh, 'bx' => $bx, 'by' => $by);
 }
 
 /**
@@ -327,7 +329,10 @@ function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, 
   // check if we have plus or minus values
   $v = explode('+', $value);
   $v2 = explode('-', $value);
-  if (!empty($v2[1])) {$v[1]=-intval($v2[1]); $v[0]=$v2[0];}
+  if (!empty($v2[1])) {
+    $v[1]=-intval($v2[1]); 
+    $v[0]=$v2[0];
+  }
 
   switch ($v[0]) {
     case 'top':
@@ -343,11 +348,10 @@ function textactions_keyword_filter($value, $current_pixels, $new_pixels, $adj, 
       break;
   }
   
-  // perform the adjustment
+  // Perform the adjustment.
   $value=$value+$adj;
-  // add any extra negative or positive
-  if (!empty($v[1])) {$value=$value+$v[1];}
-  #print $current_pixels.' . '.$new_pixels.' . '.$adj.' . '.$xy.'<br />';if ($xy=='y'){exit;}
+  // Add any extra negative or positive.
+  if (!empty($v[1])) $value = $value + $v[1];
   return $value;
 }
 
@@ -377,7 +381,7 @@ function imageapi_gd_image_overlaytext_alpha(&$image, $text, $size = 12, $x = 0,
   imagealphablending($image->resource, TRUE);
 
   $bounds = imagettftext($image->resource, $size, $angle, $x, $y, $color, $fontfile, $text);
-  if (empty($bounds)) { return FALSE; }
+  if (empty($bounds)) return FALSE;
   return TRUE;
 }
 

@@ -173,7 +173,7 @@ function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reve
   // Is more efficient, and seems to retain the overlays partial transparancy
   // Still does not work great for indexed gifs though?
 
-  if($alpha == 100 && ($layer->info['mime_type'] != 'image/gif')) {
+  if ($alpha == 100 && ($layer->info['mime_type'] != 'image/gif')) {
     imagealphablending($image->resource, TRUE);
     imagesavealpha($image->resource, TRUE);
     imagealphablending($layer->resource, TRUE);
@@ -211,13 +211,13 @@ function imageapi_imagemagick_image_overlay(&$image, &$layer, $x = 0, $y = 0, $a
   $layer_filepath = $layer->source;
   # TODO - alpha channels
   # I spent ages on the docs, but it appears my version of convert does not support -merge, -watermark or -dissolve
-  # Bloody libraries. - I tried  [6.2.8 06/11/08] because that's what I could get for my distro.
+  // Bloody libraries - I tried  [6.2.8 06/11/08] because thats what I could get for my distro.
   
   # This just drops the image on, no alpha:
   $image->ops[] = "  \"$layer_filepath\" -geometry +$x+$y  -composite    "  ;
 
-  # This also worked.
-  #  $image->ops[] = ' -draw "image over '.$x.','.$y.' 0,0 \''. $layer_filepath .'\'"'  ;
+  # This also worked
+  #  $image->ops[] = ' -draw "image over {$x},{$y} 0,0 \'{$layer_filepath}\'"'  ;
 
   return TRUE;
 }

@@ -1,6 +1,7 @@
 <?php
+// $Id$
 /**
- * Utility form, conversion and rendering functions for image processes
+ * @file Utility form, conversion and rendering functions for image processes
  */
 
 
@@ -14,8 +15,7 @@
  * function in order to ensure it's in the registry.
  */
 function imagecache_rgb_form($action) {
-
-  if($action['HEX'] && $deduced = hex_to_rgb($action['HEX'])) {
+  if ($action['HEX'] && $deduced = hex_to_rgb($action['HEX'])) {
     $action = array_merge($action, $deduced);
     $action['HEX'] = ltrim($action['HEX'], '#');
     // With or without # is valid, but trim for consistancy
@@ -68,7 +68,7 @@ function imagecacheactions_pos_form($action) {
  * Set blanks to zero, just so the status summary doesn't get odd blanks
  */
 function imagecache_actions_validate_number(&$element, &$form_state) {
-  if(empty($element['#value'])) form_set_value($element, 0, $form_state);
+  if (empty($element['#value'])) form_set_value($element, 0, $form_state);
 }
 
 function imagecache_actions_validate_alpha(&$element, &$form_status) {
@@ -82,7 +82,6 @@ function imagecache_actions_validate_alpha(&$element, &$form_status) {
  * Render the subform in a table
  */
 function theme_imagecacheactions_rgb_form(&$form) {
-
   // Add a farb element
   drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
   drupal_add_js('misc/farbtastic/farbtastic.js');
@@ -123,10 +122,10 @@ function theme_imagecacheactions_rgb_form(&$form) {
 
 function theme_imagecacheactions_rgb($rgb) {
   if ($rgb['HEX']) {
-    return " <span style=\"width:2em; border:1px solid white; background-color:#{$rgb["HEX"]}\" >&nbsp;#{$rgb['HEX']}&nbsp;</span>";
+    return " <span style=\"width:2em; border:1px solid white; background-color:#{$rgb['HEX']}\" >&nbsp;#{$rgb['HEX']}&nbsp;</span>";
   }
   else {
-    return ' ' .t('Transparent');
+    return ' '. t('Transparent');
   }
 }
 
@@ -301,8 +300,8 @@ function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
 
   // lookup upload.module attachments
   if (module_exists('upload')) {
-    $sql = "SELECT nid, f.fid FROM {upload} AS u INNER JOIN {files} AS f ON u.fid = f.fid WHERE f.filepath = '%s' LIMIT 1";
-    $results = db_query($sql, $filepath);
+    $sql = "SELECT nid, f.fid FROM {upload} AS u INNER JOIN {files} AS f ON u.fid = f.fid WHERE f.filepath = '%s'";
+    $results = db_query_range($sql, $filepath, 0, 1);
     if ( $row = db_fetch_array($results)) {
       // Return immediately
       $node = node_load($row['nid']);
@@ -314,8 +313,8 @@ function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
 
   // Lookup image.module nodes
   if (module_exists('image')) {
-    $sql = "SELECT nid FROM {image} AS i INNER JOIN {files} AS f ON i.fid = f.fid WHERE f.filepath = '%s' LIMIT 1";
-    if ( $nid = db_result(db_query($sql, $filepath))){
+    $sql = "SELECT nid FROM {image} AS i INNER JOIN {files} AS f ON i.fid = f.fid WHERE f.filepath = '%s'";
+    if ( $nid = db_result(db_query_range($sql, $filepath, 0, 1))) {
       // Return immediately
       return node_load($nid);
     }
@@ -388,8 +387,8 @@ function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
           
           // We have the node but lost track of the file in the process.
           // Need to scan again to make sure we got the right one :-{
-          if( $file_fields = $node->{$field['field_name']} ) {
-            foreach($file_fields as $file_field) {
+          if ( $file_fields = $node->{$field['field_name']} ) {
+            foreach ($file_fields as $file_field) {
               if ($file_field['fid'] == $fid) {
                 $actual_file = $file_field;
               }
