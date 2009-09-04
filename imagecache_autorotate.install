@@ -1,0 +1,14 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Ensure Imagecache recognises our new actions, per http://drupal.org/node/290101.
+ */
+
+function imagecache_autorotate_enable() {
+  cache_clear_all('imagecache_actions', 'cache');
+}
+
+function imagecache_autorotate_disable() {
+  cache_clear_all('imagecache_actions', 'cache');
+}

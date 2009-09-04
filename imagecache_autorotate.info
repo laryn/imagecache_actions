@@ -1,0 +1,6 @@
+; $Id$
+name = Imagecache Autorotate
+description = Autorotate image based on EXIF Orientation.
+dependencies[] = imagecache
+package = ImageCache
+core = 6.x

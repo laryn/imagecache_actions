@@ -156,7 +156,13 @@ function textactions_text2canvas_form($action) {
 function textactions_text2canvas_validate_fontfile(&$element, &$form_status) {
   if (! $fontfile = textactions_find_font($element['#value'], TRUE)) {
     // Just warn, don't prevent
-    drupal_set_message(t("Unable to confirm that the font '%fontfile' is available on your system. This may fail, or your system may provide an appropriate fallback, depending on your toolkit behaviour.", array('%fontfile' => $element['#value'])), 'warning' );
+    drupal_set_message(t("
+      Unable to confirm that the font '%fontfile' is available on your system. 
+      This may fail, or your system may provide an appropriate fallback, 
+      depending on your toolkit behaviour. 
+      Ensure the path to the ttf file is correct, 
+      and permissions allow the webserver to read the file and directory.", 
+      array('%fontfile' => $element['#value'])), 'warning' );
   }
   else {
     drupal_set_message(t("Font was found OK at %fontfile", array('%fontfile' => $fontfile)), 'notice');
@@ -419,7 +425,7 @@ function textactions_find_font($fontpath, $strict = FALSE) {
     return realpath($tryfontpath);
   }
 
-  // Try files
+  // Try in the files directory
   $tryfontpath =  file_create_path($fontpath);
   if (is_file($tryfontpath)) {
     return realpath($tryfontpath);
