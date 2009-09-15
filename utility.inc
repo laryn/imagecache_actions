@@ -372,7 +372,7 @@ function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
           $query_args[] = $fid; 
         }
 
-        $result = db_query("SELECT nid FROM {$tablename} WHERE ". join(' OR ', $wheres), $query_args);
+        $result = db_query('SELECT nid FROM {'. $tablename .'} WHERE '. join(' OR ', $wheres), $query_args);
         
         while ($row = db_fetch_array($result)) {
           // This while is a dummy loop - Just break out and return the first matching node. 

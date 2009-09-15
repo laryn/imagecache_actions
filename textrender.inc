@@ -100,6 +100,7 @@ function theme_textactions_rendertext($element) {
  * @param $action
  */
 function textactions_rendertext_image(&$image, $action = array()) {
+
   if (!empty($action['evaluate_text'])) {
     $text = textactions_evaluate_text($image, $action);
   }
