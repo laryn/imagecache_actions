@@ -90,19 +90,19 @@ class watermark {
           $return_color = $this->_get_image_color($return_img, $avg_red, $avg_green, $avg_blue, $new_alpha);
         }
         else {
-/*
+          // Point is out of bounds from the watermark. Return the normal image color
+
           // allow watermark to overflow from the image. Rare, but could be useful
           if ($x > imagesx($main_img_obj) || $y > imagesy($main_img_obj)) {
+            // Point is out of bounds from the main image too. Return transparent
             $watermark_rbg = imagecolorsforindex($watermark_img_obj, imagecolorat($watermark_img_obj, $watermark_x, $watermark_y));
             $watermark_alpha = 0;#round(((127 - $watermark_rbg['alpha']) / 127), 2);
             $return_color = $this->_get_image_color($return_img, $watermark_rbg['red'], $watermark_rbg['green'], $watermark_rbg['blue'], $watermark_alpha);
           }
           else {
-*/
             $return_color = imagecolorat($main_img_obj, $x, $y);
-/*
           }
-*/
+
         }
         if ($return_color == $transparent_ix) {
           $return_color = $transparent;
