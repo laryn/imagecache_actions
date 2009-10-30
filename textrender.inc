@@ -17,8 +17,6 @@
  * be ported over to there if that makes sense.
  */
 
-require_once(dirname(__FILE__) . '/textactions.inc');
-
 /**
  * Place text on top of the current canvas
  *
@@ -66,7 +64,7 @@ function textactions_rendertext_form($action) {
       '#collapsible' => TRUE, 
       '#collapsed' => TRUE, 
       '#title' => t('PHP code help'),
-      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_textactions') .'/help/textrender_syntax.html'),
+      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_text') .'/help/textrender_syntax.html'),
     ),
   );
   if (! user_access('administer site configuration')) {
@@ -88,7 +86,11 @@ function textactions_rendertext_form($action) {
 function theme_textactions_rendertext($element) {
   $data = $element['#value'];
   $style_atts = imageapi_text_parse_style($data['textstyle']['style']);
-  return t("<em><strong>@data</strong></em><br/>%style", array('@data' => $data['text'], '%style' => $data['textstyle']['style'])) ;
+  return t("<em>\"<strong>@data</strong>\"</em><br/>%style<br/>%font", array(
+    '@data'  => $data['text'], 
+    '%style' => $data['textstyle']['style'], 
+    '%font'  => basename($data['textstyle']['fontfile'])
+  )) ;
 }
 
 /**
@@ -134,6 +136,7 @@ function textactions_rendertext_image(&$image, $action = array()) {
   // $textimage should now have its size info available.
   // Calc the position on the canvas
   $xy = imagecache_actions_calculate_relative_position($image, $textimage, $style);
+#dpm(get_defined_vars());
   return imageapi_image_overlay($image, $textimage, $xy['x'], $xy['y']);
 }
 
