@@ -181,23 +181,29 @@ function hex_to_rgb($hex) {
  * 
  */
 function imagecache_actions_keyword_filter($value, $current_size, $object_size) {
-  $keyword = 0; 
+  $keyword = ''; 
   $offset = 0;
   
   // Check if we have plus or minus values
+  // Assume that no + means a raw value
+
   $keyword_split = explode('+', $value);
   $keyword = $keyword_split[0];
   if (! empty($keyword_split[1]) ) {
-    $offset = $keyword_split[1];
-  }
-  if (strstr($value, '-')) {
-    $k2 = explode('-', $value);
-    $keyword = $k2[0];
-    $offset = -intval($k2[1]);
+    $offset = intval($keyword_split[1]);
   }
 
+  if (strstr($value, '-')) {
+    $keyword_split = explode('-', $value);
+    $keyword = $keyword_split[0];
+    if (! empty($keyword_split[1]) ) {
+      $offset = -1 * intval($keyword_split[1]);
+    }
+  }
+  
+
   // handle % values
-  if (substr($value, strlen($value), 1) == '%') {
+  if (substr($value, strlen($value)-1, 1) == '%') {
     $percent = TRUE;
     $offset = intval($offset);
     $value = intval($value / 100 * $current_size);
@@ -210,7 +216,7 @@ function imagecache_actions_keyword_filter($value, $current_size, $object_size) 
       $offset = intval($offset / 100 * $current_size);
     }
   }
-
+  #dpm(get_defined_vars());  
 
   // Whether the value is 'top or left doesn't matter, treat both axes the same.
   switch ($keyword) {
@@ -224,13 +230,16 @@ function imagecache_actions_keyword_filter($value, $current_size, $object_size) 
       $offset = -1 * $offset;
       break;
     case 'center':
+    case 'middle':
       $value = $current_size/2 - $object_size/2;
       break;
     default :
       // if no keyword, it was a raw number - assume top left then
       $value = intval($value);
   }
+  #dpm(get_defined_vars());  
   #dpm("Placing an object $object_size big on a range of $current_size at a position of $value , $offset");  
+
   // Add any extra negative or positive
   if (!empty($offset)) {
     $value = $value + $offset;
@@ -245,10 +254,10 @@ function imagecache_actions_keyword_filter($value, $current_size, $object_size) 
 function imagecache_actions_calculate_relative_position($base, $layer, $style) {
   // $textimage should now have its size info available.
   // Calc the position
-  if (!empty($style['top'])) {
+  if (isset($style['top'])) {
     $ypos = $style['top'];
   }
-  if (!empty($style['bottom'])) {
+  if (isset($style['bottom'])) {
     $ypos = $base->info['height'] - ( $layer->info['height'] + $style['bottom']);
   }
   if (! isset($ypos)) {
@@ -256,10 +265,10 @@ function imagecache_actions_calculate_relative_position($base, $layer, $style) {
     $ypos = ($base->info['height']/2) - ($layer->info['height']/2);
   }
 
-  if (!empty($style['left'])) {
+  if (isset($style['left'])) {
     $xpos = $style['left'];
   }
-  if (!empty($style['right'])) {
+  if (isset($style['right'])) {
     $xpos = $base->info['width'] - ( $layer->info['width'] + $style['right']);
   }
   if (! isset($xpos)) {
