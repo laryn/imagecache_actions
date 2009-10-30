@@ -909,7 +909,7 @@ function theme_canvasactions_roundedcorners($element) {
  * @return a form definition
  */
 function canvasactions_aspect_form($action) {
-  $defaults = array(  );
+  $defaults = array( 'ratio_adjustment' => 1 );
   $action = array_merge($defaults, (array)$action);
   
   $form = array(
@@ -936,6 +936,22 @@ function canvasactions_aspect_form($action) {
     '#default_value' => $action['landscape'],
     '#options' => $presets,
   );
+
+  $form['ratio_adjustment'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ratio Adjustment (advanced)'),
+    '#size' => 3,
+    '#default_value' => $action['ratio_adjustment'],
+    '#description' => t("
+This allows you to bend the rules for how different the proportions need to be to trigger the switch.  
+<br/>If the (width/height)*n is greater than 1, use 'landscape', otherwise use 'portrait'.
+<br/>When n = 1 (the default) it will switch between portrait and landscape modes.
+<br/>If n > 1, images that are slightly wide will still be treated as portraits.
+If n < 1 then blunt portraits will be treated as landscape.
+    "),
+  );
+  
+  
   return $form;
 }
 
@@ -946,7 +962,11 @@ function canvasactions_aspect_form($action) {
 function theme_canvasactions_aspect($element) {
   $action = $element['#value'];
   $presets = imagecache_presets(TRUE); 
-  return 'Portrait size: <strong>'. $presets[$action['portrait']]['presetname'] . '</strong>. Landscape size: <strong>'. $presets[$action['landscape']]['presetname'] .'</strong>' ;
+  $ratio_adjustment = '';
+  if ($action['ratio_adjustment'] != 1) {
+    $ratio_adjustment = " (switch at 1:{$action['ratio_adjustment']})";
+  }
+  return 'Portrait size: <strong>'. $presets[$action['portrait']]['presetname'] . '</strong>. Landscape size: <strong>'. $presets[$action['landscape']]['presetname'] .'</strong>'. $ratio_adjustment ;
 }
 
 /**
@@ -959,7 +979,13 @@ function theme_canvasactions_aspect($element) {
  * @param $action
  */
 function canvasactions_aspect_image(&$image, $action = array()) {
-  $preset_id = ($image->info['width'] > $image->info['height'] ) ? $action['landscape'] : $action['portrait'];
+  $ratio_adjustment = 0 + $action['ratio_adjustment'];
+  if (!$ratio_adjustment) {
+    $ratio_adjustment = 1;
+  }
+  $aspect = $image->info['width'] / $image->info['height'];
+  // width / height * adjustment. If > 1, it's wide. 
+  $preset_id = (($aspect * $ratio_adjustment) > 1) ? $action['landscape'] : $action['portrait'];
   $preset = imagecache_preset($preset_id);
 
   // Run the preset actions ourself. Cannot invoke a preset from the top as it handles filenames, not image objects.
