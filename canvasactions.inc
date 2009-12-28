@@ -279,6 +279,7 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
         'width' => $targetsize['width'], 
         'height' => $targetsize['height'],
         'mime_type' => 'image/png',
+        'extension' => 'png',
       ),
       'toolkit' => $image->toolkit,
     );
@@ -300,13 +301,15 @@ function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
   $targetsize = $action['targetsize'];
   $RGB = $action['RGB'];
   
+  # TODO needs work.
+  #
   $crop = " -background '#{$RGB['HEX']}' -crop   '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
   $draw = '';
 
   $draw = " -draw '";
   $draw .= " fill '#{$RGB['HEX']}' polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
   $draw .= " ' ";
-#  $draw .= " -composite ";
+  #$draw .= " -composite ";
   $draw .= " +repage ";
 
   $compose = " $crop $draw ";
@@ -391,7 +394,7 @@ function theme_canvasactions_canvas2file($element) {
  * @param $action
  */
 function canvasactions_canvas2file_image(&$image, $action = array()) {
-  // search for full (siteroot) paths, then file dir paths, then relative to the current theme
+  // Search for full (siteroot) paths, then file dir paths, then relative to the current theme
   $filepath = $action['path'];
   if (!file_exists($filepath) ) {
     $filepath = file_create_path($action['path']);
@@ -411,6 +414,14 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   if (empty($action['dimensions'])) $action['dimensions'] = 'original';
   switch ($action['dimensions']) {
     case 'original' :
+      // If the underlay is smaller than the target size, 
+      // then when preparing the underlay by cropping it, 
+      // the offsets may need to be negative
+      // which will produce a 'cropped' image larger than the original
+      // In this case, we need to calculate the position of the bg image
+      // in relation to the space it will occupy under the top layer
+      #$crop_rules['xoffset'] = $underlay->info['width'] - $image->info['width'] ;
+
       $crop_rules['width'] = $image->info['width'];
       $crop_rules['height']  = $image->info['height'];
       break;
@@ -430,11 +441,12 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   // imageapi crop assumes upsize is legal.
   imagecache_include_standard_actions(); // ensure the library is loaded.
 
-  // crop both before processing to avoid unwanted processing.
+  // Crop both before processing to avoid unwanted processing.
   imagecache_crop_image($underlay, $crop_rules);
+  # BUG - this doesn't position either
   // Actually this fails because imagecache_crop fills it with solid color when 'cropping' to a larger size.
   #imagecache_crop_image($image, $crop_rules);
-
+  #dpm(get_defined_vars());
   // This func modifies the underlay image by ref, placing the current canvas on it
   if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'], TRUE)) {
     $image->resource = $underlay->resource;

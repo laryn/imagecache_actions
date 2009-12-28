@@ -168,7 +168,11 @@ function imageapi_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse
  * @return bool success
  */
 function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
-
+  if (empty($layer->resource)) {
+    trigger_error("Invalid input to ". __FUNCTION__ . " 'layer' is not a valid resource");
+    #dpm($layer);
+    return FALSE;
+  }
   // If the given alpha is 100%, we can use imagecopy - which actually works, 
   // Is more efficient, and seems to retain the overlays partial transparancy
   // Still does not work great for indexed gifs though?
@@ -183,7 +187,7 @@ function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reve
     #imagealphablending($image->resource, FALSE);
   }
   else {
-    // else imagecopymerge fails and we have to use the slow library 
+    // Else imagecopymerge fails and we have to use the slow library 
     require_once('watermark.inc');
     $watermark = new watermark();
     $image->resource = $watermark->create_watermark($image->resource, $layer->resource, $x, $y, $alpha);
@@ -230,6 +234,8 @@ function imageapi_imagemagick_image_overlay(&$image, &$layer, $x = 0, $y = 0, $a
   #  watchdog('imagecache_canvas', print_r($image->ops, 1) );          
   # This also worked
   #  $image->ops[] = ' -draw "image over {$x},{$y} 0,0 \'{$layer_filepath}\'"'  ;
+
+  // TODO - I may end up with a different sized image from doing this?
 
   return TRUE;
 }
