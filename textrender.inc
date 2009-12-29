@@ -25,7 +25,7 @@
  * @param $action array of settings for this action
  * @return a form definition
  */
-function textactions_rendertext_form($action) {
+function textrender_rendertext_form($action) {
 
   $defaults = array(
     'xpos' => 'left+10',
@@ -81,7 +81,7 @@ function textactions_rendertext_form($action) {
 /**
  * Implementation of theme_hook() for imagecache_ui.module
  */
-function theme_textactions_rendertext($element) {
+function theme_textrender_rendertext($element) {
   $data = $element['#value'];
   $style_atts = imageapi_text_parse_style($data['textstyle']['style']);
   return t("<em>\"<strong>@data</strong>\"</em><br/>%style<br/>%font", array(
@@ -99,7 +99,7 @@ function theme_textactions_rendertext($element) {
  * @param $image
  * @param $action
  */
-function textactions_rendertext_image(&$image, $action = array()) {
+function textrender_rendertext_image(&$image, $action = array()) {
 
   if (!empty($action['evaluate_text'])) {
     $text = textactions_evaluate_text($image, $action);
@@ -137,4 +137,3 @@ function textactions_rendertext_image(&$image, $action = array()) {
 
   return imageapi_image_overlay($image, $textimage, $xy['x'], $xy['y']);
 }
-

@@ -28,8 +28,8 @@ $presets['textactions_positioning'] = array (
 
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:10px; fill:#FFFFFF;',
@@ -41,8 +41,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; top:10px; left:10px;',
@@ -54,8 +54,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; bottom:0px;',
@@ -67,8 +67,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; top:-1; right:-2',
@@ -80,8 +80,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; left:0px; top:90; stroke-width:6px; stroke:#ffffff;',
@@ -93,8 +93,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; right:0px; transform:rotate(90);',
@@ -106,8 +106,8 @@ $presets['textactions_positioning'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#111111; bottom:-6px;left:-6px; transform:rotate(-45); stroke-width:2px; stroke:#ffffff;',
@@ -140,8 +140,8 @@ $presets['textactions_positioning_percent'] = array (
 
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; left:0px; top:25%;',
@@ -154,8 +154,8 @@ $presets['textactions_positioning_percent'] = array (
 
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; bottom:25%; right:25%',
@@ -167,8 +167,8 @@ $presets['textactions_positioning_percent'] = array (
     ),
     array (
       'weight' => '0',
-      'module' => 'imagecache_textactions',
-      'action' => 'textactions_rendertext',
+      'module' => 'imagecache_textrender',
+      'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
           'style' => 'font-size:8px; fill:#333366; left:0%; top:60%',

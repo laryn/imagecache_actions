@@ -16,7 +16,7 @@ module_load_include('inc', 'imagecache_textrender', 'utility');
 */ 
 function imagecache_textrender_imagecache_actions() {
   $actions = array(
-    'textactions_rendertext' => array(
+    'textrender_rendertext' => array(
       'name' => t('Render Text'),
       'description' => t('Add static or dynamic (coded) text to an image using <a href="!imageapi_link">imageapi_text</a> CSS-like effects.', array(url('admin/settings/imageapi/config/text'))),
       'file' => 'textrender.inc',
