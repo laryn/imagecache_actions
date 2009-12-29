@@ -85,7 +85,7 @@ function theme_imagecacheactions_rgb_form(&$form) {
   // Add a farb element
   drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
   drupal_add_js('misc/farbtastic/farbtastic.js');
-//  drupal_add_js(drupal_get_path('module', 'imagecache_coloractions') . '/color.js');
+  //  drupal_add_js(drupal_get_path('module', 'imagecache_coloractions') . '/color.js');
 
   $hex_id = $form['HEX']['#id'];
   $form['farb'] = array('#value' => "<div id=\"$hex_id-farb\" style=\"float:right\"></div>", '#weight' => -1 );
@@ -180,102 +180,104 @@ function hex_to_rgb($hex) {
  * 
  * 
  */
-function imagecache_actions_keyword_filter($value, $current_size, $object_size) {
-  $keyword = ''; 
-  $offset = 0;
-  
-  // Check if we have plus or minus values
-  // Assume that no + means a raw value
-
-  $keyword_split = explode('+', $value);
-  $keyword = $keyword_split[0];
-  if (! empty($keyword_split[1]) ) {
-    $offset = intval($keyword_split[1]);
+function imagecache_actions_keyword_filter($value, $base_size, $layer_size) {
+  // See above for the patterns this matches
+  if (! preg_match('/([a-z]*)([\+\-]?)(\d*)([^\d]*)/', $value, $results) ) {
+    trigger_error("imagecache_actions had difficulty parsing the string '$value' when calculating position. Please check the syntax.", E_USER_WARNING);
   }
+  list($match, $keyword, $plusminus, $value, $unit) = $results;
 
-  if (strstr($value, '-')) {
-    $keyword_split = explode('-', $value);
-    $keyword = $keyword_split[0];
-    if (! empty($keyword_split[1]) ) {
-      $offset = -1 * intval($keyword_split[1]);
-    }
-  }
-  
+  #dpm(__FUNCTION__ . " Placing an object $layer_size big on a range of $base_size at a position of $value");  
+  #dpm(get_defined_vars());
 
-  // handle % values
-  if (substr($value, strlen($value)-1, 1) == '%') {
-    $percent = TRUE;
-    $offset = intval($offset);
-    $value = intval($value / 100 * $current_size);
-    if (! $keyword) {
-      // just said eg '25%' - so center the object there
-      $offset = $object_size / -2;
-    } 
-    else {
-      // Otherwise the keyword will give us the new value, and the % will be its offset
-      $offset = intval($offset / 100 * $current_size);
-    }
-  }
-  #dpm(get_defined_vars());  
-
-  // Whether the value is 'top or left doesn't matter, treat both axes the same.
-  switch ($keyword) {
-    case 'top':
-    case 'left':
-      $value = 0;
-      break;
-    case 'bottom':
-    case 'right':
-      $value = $current_size - $object_size;
-      $offset = -1 * $offset;
-      break;
-    case 'center':
-    case 'middle':
-      $value = $current_size/2 - $object_size/2;
-      break;
-    default :
-      // if no keyword, it was a raw number - assume top left then
-      $value = intval($value);
-  }
-  #dpm(get_defined_vars());  
-  #dpm("Placing an object $object_size big on a range of $current_size at a position of $value , $offset");  
-
-  // Add any extra negative or positive
-  if (!empty($offset)) {
-    $value = $value + $offset;
-  }
-  return $value;
+  return imagecache_actions_calculate_offset($keyword, $plusminus.$value.$unit, $base_size, $layer_size);
 }
 
 /**
  * Given two imageapi objects with dimensions, and some positioning values,
  * calculate a new x,y for the layer to be placed at.
+ * 
+ * This is a different approach to imagecache_actions_keyword_filter() - more
+ * like css.
+ * 
+ * The $style is expected to have 'top,bottom, left,right' attributes set. These
+ * values may be positive, negative, or in %.
+ * 
+ * % is calculated relative to the base image dimensions.
+ * Using % requires that the layer is positioned CENTERED on that location, so
+ * some offsets are added to it. 'right-25%' is not lined up with a margin 25%
+ * in, it's centered at a point 25% in - which is therefore identical with
+ * left+75%
  */
 function imagecache_actions_calculate_relative_position($base, $layer, $style) {
   // $textimage should now have its size info available.
-  // Calc the position
-  if (isset($style['top'])) {
-    $ypos = $style['top'];
-  }
+
   if (isset($style['bottom'])) {
-    $ypos = $base->info['height'] - ( $layer->info['height'] + $style['bottom']);
+    $ypos = imagecache_actions_calculate_offset('bottom', $style['bottom'], $base->info['height'], $layer->info['height']);
+  }
+  if (isset($style['top'])) {
+    $ypos = imagecache_actions_calculate_offset('top', $style['top'], $base->info['height'], $layer->info['height']);
+  }
+  if (isset($style['right'])) {
+    $xpos = imagecache_actions_calculate_offset('right', $style['right'], $base->info['width'], $layer->info['width']);
+  }
+  if (isset($style['left'])) {
+    $xpos = imagecache_actions_calculate_offset('left', $style['left'], $base->info['width'], $layer->info['width']);
   }
   if (! isset($ypos)) {
     // assume center
     $ypos = ($base->info['height']/2) - ($layer->info['height']/2);
   }
-
-  if (isset($style['left'])) {
-    $xpos = $style['left'];
-  }
-  if (isset($style['right'])) {
-    $xpos = $base->info['width'] - ( $layer->info['width'] + $style['right']);
-  }
   if (! isset($xpos)) {
     // assume center
     $xpos = ($base->info['width']/2) - ($layer->info['width']/2);
   }
+  #dpm(__FUNCTION__ . " Calculated offsets");  
+  #dpm(get_defined_vars());
+
   return array('x' => $xpos, 'y' => $ypos);
+}
+
+/**
+ * Positive numbers are IN from the edge, negative offsets are OUT.
+ * 
+ * $keyword, $value, $base_size, $layer_size
+ * eg 
+ * left,20 200, 100 = 20
+ * right,20 200, 100 = 80 (object 100 wide placed 20 px from the right = x=80)
+ * 
+ * top,50%, 200, 100 = 50 (Object is centered when using %)
+ * top,20%, 200, 100 = -10 
+ * bottom,-20, 200, 100 = 220
+ * right, -25%, 200, 100 = 200 (this ends up just offscreen)
+ * 
+ */
+function imagecache_actions_calculate_offset($keyword, $value, $base_size, $layer_size) {
+  $offset = 0; // used to account for dimensions of the placed object
+  $direction = 1;
+  $base = 0;
+  if ($keyword == 'right' || $keyword == 'bottom') {
+    $direction = -1;
+    $offset = -1 * $layer_size;
+    $base = $base_size;
+  }
+  if ($keyword == 'middle' || $keyword == 'center') {
+    $base = $base_size/2;
+    $offset = -1 * ($layer_size / 2);
+  }
+
+  // handle % values
+  if (substr($value, strlen($value)-1, 1) == '%') {
+    $value = intval($value / 100 * $base_size);
+    $offset = -1 * ($layer_size / 2);
+  }
+  $value = $base + ($direction * $value);
+
+  #dpm(__FUNCTION__ . " Placing an object $layer_size big on a range of $base_size at a position of $value , $offset");  
+  #dpm(get_defined_vars());
+
+  // Add any extra offset to position the item
+  return $value + $offset;
 }
 
 /**

@@ -64,7 +64,7 @@ function textactions_rendertext_form($action) {
       '#collapsible' => TRUE, 
       '#collapsed' => TRUE, 
       '#title' => t('PHP code help'),
-      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_text') .'/help/textrender_syntax.html'),
+      '#value' => file_get_contents(drupal_get_path('module', 'imagecache_textrender') .'/help/textrender_syntax.html'),
     ),
   );
   if (! user_access('administer site configuration')) {
@@ -77,8 +77,6 @@ function textactions_rendertext_form($action) {
 
   return $form;
 }
-
-
 
 /**
  * Implementation of theme_hook() for imagecache_ui.module
@@ -120,7 +118,7 @@ function textactions_rendertext_image(&$image, $action = array()) {
 
   // Calculate position by first creating a temp image 
   // containing the text and then accessing its dimensions.
-  // Inefficient, but reliable.
+  // Inefficient, but reliable way to actually get the bounding box.
 
   // $textimage is a placeholder that will get the image created in it - an object to work like the rest of the imageapi functions.
   // We really need to force the toolkit to GD, but even then it can't be merged back into imagemagick
@@ -136,7 +134,7 @@ function textactions_rendertext_image(&$image, $action = array()) {
   // $textimage should now have its size info available.
   // Calc the position on the canvas
   $xy = imagecache_actions_calculate_relative_position($image, $textimage, $style);
-#dpm(get_defined_vars());
+
   return imageapi_image_overlay($image, $textimage, $xy['x'], $xy['y']);
 }
 

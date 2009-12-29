@@ -379,7 +379,7 @@ function theme_canvasactions_canvas2file($element) {
     $filepath = file_create_path($data['path']);
   }
   $file_url = url($filepath);
-  return "xpos:{$data['xpos']} , ypos:{$data['ypos']} alpha:{$data['alpha']}%. file path:<a href='$file_url'>{$data['path']}</a>, dimensions:{$data['dimensions']}" ;
+  return "xpos:{$data['xpos']} , ypos:{$data['ypos']} alpha:{$data['alpha']}%. file path: <a href='$file_url'>". basename($data['path']) ."</a>, dimensions:{$data['dimensions']}" ;
 }
 
 /**
@@ -517,7 +517,7 @@ function canvasactions_file2canvas_validate_file(&$element, &$form_status) {
  */
 function theme_canvasactions_file2canvas($element) {
   $action = $element['#value'];
-  return '<strong>'. basename($action['path']) . '</strong> x:'. $action['xpos'] .', y:'. $action['ypos'] .' alpha:'. $action['alpha'] .'%' ;
+  return '<strong>'. basename($action['path']) . '</strong> x:'. $action['xpos'] .', y:'. $action['ypos'] .' alpha:'. (@$action['alpha'] ? $action['alpha'] : 100) .'%' ;
 }
 
 /**
@@ -540,6 +540,9 @@ function canvasactions_file2canvas_image(&$image, $action = array()) {
   if (! isset($overlay) || ! $overlay) {
     trigger_error(t("Failed to find overlay image %path for imagecache_actions file-to-canvas action. File was not found in the sites 'files' path or the current theme folder.", array('%path' => $action['path'])), E_USER_WARNING);
     return FALSE;
+  }
+  if (! isset($action['alpha']) ) {
+    $action['alpha'] = 100;
   }
   return imageapi_image_overlay($image, $overlay, $action['xpos'], $action['ypos'], $action['alpha']);
 }
