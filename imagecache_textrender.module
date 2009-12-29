@@ -3,31 +3,25 @@
 /**
  * @file Provide text manipulation process for imagecache.
  * 
- * Ported by dman 
- * from http://drupal.org/node/264862#comment-865490 by patrickharris
+ * Uses an updated syntax for defining text styles
  * 
  */
-  cache_clear_all('imagecache_actions', 'cache');
+cache_clear_all('imagecache_actions', 'cache');
 
-require_once(dirname(__FILE__) .'/utility.inc'); // For simple color routines
+// For simple color routines
+module_load_include('inc', 'imagecache_textrender', 'utility');
 
 /**
 * Implementation of hook_imagecache_actions().
 */ 
-function imagecache_textactions_imagecache_actions() {
+function imagecache_textrender_imagecache_actions() {
   $actions = array(
-    'textactions_text2canvas' => array(
-      'name' => t('Text'),
-      'description' => t('Add static or dynamic (coded) text to an image.'),
-      'file' => 'textactions.inc',
-    ),
     'textactions_rendertext' => array(
       'name' => t('Render Text'),
-      'description' => t('EXPERIMENTAL Add static or dynamic (coded) text to an image using <a href="!imageapi_link">imageapi_text</a> CSS-like effects.', array(url('admin/settings/imageapi/config/text'))),
+      'description' => t('Add static or dynamic (coded) text to an image using <a href="!imageapi_link">imageapi_text</a> CSS-like effects.', array(url('admin/settings/imageapi/config/text'))),
       'file' => 'textrender.inc',
     ),
   );
-
   return $actions;
 }
 
@@ -36,9 +30,9 @@ function imagecache_textactions_imagecache_actions() {
  * Only tuned for Ubuntu so far. I've been unable do find ubiquitous tools that
  * provide useful font listings.'
  */
-function imagecache_textactions_help($path, $arg) {
+function imagecache_textrender_help($path, $arg) {
   switch ($path) {
-    case 'admin/help#imagecache_textactions':
+    case 'admin/help#imagecache_textrender':
       $output = "<p>
         For text rendering to work on a server, we <em>must</em>
         know the system path to the font <em>file</em>, not just the name.
@@ -83,13 +77,9 @@ function imagecache_textactions_help($path, $arg) {
 /**
  * Need to register the theme functions we expect to use
  */
-function imagecache_textactions_theme() {
+function imagecache_textrender_theme() {
   return array(
-    'textactions_text2canvas' => array(
-      'file'      => 'textactions.inc',
-      'arguments' => array('element' => NULL),
-    ),
-    'textactions_rendertext' => array(
+    'textrender_rendertext' => array(
       'file'      => 'textrender.inc',
       'arguments' => array('element' => NULL),
     ),
@@ -116,7 +106,7 @@ function imagecache_textactions_theme() {
  * 
  * @return $text Plain or code string to be placed on the imagecache process.
  */
-function textactions_evaluate_text($image, $action) {
+function textrender_evaluate_text($image, $action) {
 
   // HOOK_metadata from file attempts to glean info from any direction possible - EXIF, XMP, DB, description.txt
   // @see the meta_* project
