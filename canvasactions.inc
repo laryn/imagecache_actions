@@ -805,6 +805,9 @@ function imageapi_gd_image_roundedcorners(&$image, $action = array()) {
  *   
  * @return float
  *   opacity value between 0 (fully transparent) and 1 (fully opaque).
+ * 
+ * OPTIMIZE HERE! This is a really tight loop, potentially getting called
+ * thousands of times
  */
 function _canvasactions_roundedcorners_pixel_opacity($x, $y, $r) {
   if ($x < 0 || $y < 0) {

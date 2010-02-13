@@ -102,7 +102,7 @@ function theme_textrender_rendertext($element) {
 function textrender_rendertext_image(&$image, $action = array()) {
 
   if (!empty($action['evaluate_text'])) {
-    $text = textactions_evaluate_text($image, $action);
+    $text = imagecache_actions_evaluate_text($image, $action);
   }
   else {
     $text = $action['text'];

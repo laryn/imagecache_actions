@@ -289,6 +289,98 @@ function imagecache_include_standard_actions() {
   include_once($cropaction['file']);
 }
 
+
+/**
+ * Generate the dynamic text for this image.
+ * Was textactions caption - now merged as an option of text2canvas
+ * 
+ * TODO further code review for safety etc
+ * 
+ * @param $image object, as provided by imageapi
+ * @param $action definition
+ * 
+ * @return $text Plain or code string to be placed on the imagecache process.
+ */
+function imagecache_actions_evaluate_text($image, $action) {
+
+  // HOOK_metadata from file attempts to glean info from any direction possible - EXIF, XMP, DB, description.txt
+  // @see the meta_* project
+  if (!empty($image->source)) {
+    $file_metadata = module_invoke_all('metadata_from_file', $image->source);
+    #$file_data = (object) $meta;
+    // $file_data is an array of namespaced keyed further arrays of values.
+    // $file_data['dc:title'] = array('this pic');
+    // $title = reset($file_data['dc:title']);
+    // It's always an array because there may be conflicting or multiple values at any time.
+    
+    // $file_data is a simplified, flattened version of the same
+    // provided for user convenience because namespaces are scary
+    $file_data = (object)array();
+    foreach($file_metadata as $key => $val_array) {
+      @list($namespace, $shortname) = explode(":", $key);
+      if (! $shortname) $shortname = $namespace;
+      $shortname = strtolower($shortname);
+      if (is_array($val_array)) $file_data->$shortname = array_shift($val_array);
+      else $file_data->$shortname = $val_array;
+    }
+  }
+
+  // Try to load the attached node - if any
+  static $panic; #This can trigger recursion! build-load-build-etc
+  if ($panic) return;
+  $panic = TRUE;
+  $node = imagecache_actions_node_from_filepath($image->source, $file_data) ;
+  $panic = FALSE;
+
+  // Process the php using drupal_eval (rather than eval), 
+  // but with GLOBAL variables, so they can be passed successfully
+  $GLOBALS['image'] = $image;
+  $GLOBALS['node'] = $node;
+  $GLOBALS['file_data'] = $file_data;
+  $GLOBALS['file_metadata'] = $file_metadata;
+
+#  global $user_text; $user_text = 'text not set';
+
+/*
+  // Wrap the users instructions in a function to support them 
+  // returning (incorrectly) an array.
+  // Just using eval forced the return value to a string.
+  // Instead we wrap their code into a pseudo function, evaluate the function
+  // and we can find exactly what they returned
+
+  $command = '<'.'?php  
+    $func = create_function(NULL,\' 
+      global $node; global $image; global $file_data;
+      '. str_replace("'", "\\'",  $action['text'] ) .' 
+      ; \'
+    ); 
+    global $user_text;
+    $user_text = $func(); 
+    return $user_text; 
+  ?'.'>';
+*/
+
+  $command = '<'.'?php  
+      global $node; global $image; global $file_data; global $file_metadata;
+      '. $action['text'] .'; 
+      ?'.'>';
+
+  $text = @drupal_eval($command);
+  #dpm(array('command' => $command, 'text' => $text, 'user_text' => $user_text));
+
+  // User forgot to flatten or reset() the array value. 
+  // Deal with it for them with what they probably wanted. 
+#  if (is_array($user_text)) $text = join(", ", array_unique($user_text));
+
+  // Warn about errors in the php code if I can
+  if (empty($text) && function_exists('error_get_last') && $last_error = error_get_last()) {
+    drupal_set_message("Problem evaluating dynamic text. <br/><code>{$action['text']}</code><br/> ". $last_error['message'], 'error');
+  }
+
+  return $text;
+}
+
+
 /**
  * Given only a file filename, track back to see if we can detect the parent
  * node and provide some context info.

@@ -53,9 +53,16 @@
         <code>$file_data</code> is namespaced, structured and
         attributed, so can be complex to read.
         <br />
-         <code>drupal_set_message('&lt;pre&gt;'.
+        <code>drupal_set_message('&lt;pre&gt;'.
         print_r($file_metadata,1). '&lt;/pre&gt;'); return
         "";</code>
+        ... will display the structure.
+        <br />EG:
+        <br/>
+        <code>return join(',', $file_metadata['dc:subject']);
+        </code>
+        ... will retrieve all tags found embedded in the picture itself.
+
       </dd>
       <dt>
         <code>$file_data</code>
@@ -65,10 +72,12 @@
         been deduced from other sources. This is a flattened,
         simplified version of <code>$file_data</code> with no
         namespaces and all-lowercase attribute names.
+        <br/>
         <small><code>$file_metadata-&gt;Iptc4xmpCore:Scene['pjmt:0']
         = "exterior view";</code> becomes
         <code>$file_data-&gt;scene = "exterior view"</code></small>
-        <br />
+        <br />EG:
+        <br/>
          <code>return $file_attributes-&gt;description</code>
         <br />
          <code>return $file_attributes-&gt;copyright</code>
@@ -79,7 +88,7 @@
     </h4>
     <p>
       If it's an <b>image.module image</b> then a
-      <b><code>$node</code></b> object with its values <em>may</em>
+      <b><code>$node</code></b> object with its values <em>should</em>
       be available.
     </p>
     <p>
@@ -114,6 +123,9 @@
       <b><code>$file_metadata</code></b> and
       <b><code>$file_data</code></b> object. Note that they will
       often be structured arrays.
+      <br />
+      The metadata inspector may try to scan for embedded (EXIF or XMP) data
+      from the file itself, depending on the libraries available to you.
       <br />
        <code>$attname = "dc:creator"; return
       @reset($file_metadata-&gt;$attname);</code>
