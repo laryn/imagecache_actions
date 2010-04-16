@@ -125,6 +125,11 @@ function imagecache_customactions_image($image, $action) {
   if (function_exists('imagecache_actions_node_from_filepath')) {
     $node = imagecache_actions_node_from_filepath($image->source);
   }
+  // To get clever and do things post-process, let the process know what the final filename will be.
+  // It seems we cannot see what $dst or even our onwing presetname is.
+  // But we do know what the URL was the invoked this action! that's out filename-to-be!
+  $dst = $_REQUEST['q'];
+  
   $result = eval($action['text']);
   return $result;  
 }
