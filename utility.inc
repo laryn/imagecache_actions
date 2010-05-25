@@ -200,8 +200,8 @@ function imagecache_actions_keyword_filter($value, $base_size, $layer_size) {
  * This is a different approach to imagecache_actions_keyword_filter() - more
  * like css.
  * 
- * The $style is expected to have 'top,bottom, left,right' attributes set. These
- * values may be positive, negative, or in %.
+ * The $style is an array, and expected to have 'top,bottom, left,right'
+ * attributes set. These values may be positive, negative, or in %.
  * 
  * % is calculated relative to the base image dimensions.
  * Using % requires that the layer is positioned CENTERED on that location, so

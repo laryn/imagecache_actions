@@ -32,9 +32,10 @@ $presets['textactions_positioning'] = array (
       'action' => 'textrender_rendertext',
       'data' => array (
         'textstyle' => array (
-          'style' => 'font-size:10px; fill:#FFFFFF;',
+          'style' => 'font-size:10px; fill:#FFFFFF; text-align:center;',
           'fontfile' => drupal_get_path('module', 'imageapi_text') . '/fonts/liberation-fonts-1.04/LiberationSans-Bold.ttf',
         ),
+        'text' => "Default Centered",
         'text' => "Default\nCentered",
         'evaluate_text' => 0,
       ),

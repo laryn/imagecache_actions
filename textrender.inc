@@ -113,8 +113,10 @@ function textrender_rendertext_image(&$image, $action = array()) {
     return TRUE;
   }
 
-  $style = imageapi_text_parse_style($action['textstyle']['style']);
-  $fontfile = $action['textstyle']['fontfile'];
+  // 2010-05-21 updated API call to imageapi_image_create_text
+
+  $text_style->style = imageapi_text_parse_style($action['textstyle']['style']);
+  $text_style->fontfile = $action['textstyle']['fontfile'];
 
   // Calculate position by first creating a temp image 
   // containing the text and then accessing its dimensions.
@@ -126,14 +128,14 @@ function textrender_rendertext_image(&$image, $action = array()) {
     'toolkit' => $image->toolkit,
   );
   
-  if (! imageapi_image_create_text($textimage, $text, $fontfile, $style) || empty($textimage->info) ) {
+  if (! imageapi_image_create_text($textimage, $text, $text_style) || empty($textimage->info) ) {
     drupal_set_message(t('Failed to generate text image using %toolkit. Not overlaying text.', array('%toolkit' => $textimage->toolkit )), 'error');
     return FALSE;
   }
 
   // $textimage should now have its size info available.
   // Calc the position on the canvas
-  $xy = imagecache_actions_calculate_relative_position($image, $textimage, $style);
+  $xy = imagecache_actions_calculate_relative_position($image, $textimage, $text_style->style);
 
   return imageapi_image_overlay($image, $textimage, $xy['x'], $xy['y']);
 }
