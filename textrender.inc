@@ -40,6 +40,9 @@ function textrender_rendertext_form($action) {
   // Our 'textstyle' parameter is a nested array - reflecting the wiget fieldset structure
   // only because imagecache sets the form
   // #tree to true, and unsetting it doesn't work.
+
+  // Use the edit widget that imageapi_text provides
+  module_load_include('inc', 'imageapi_text', 'imageapi_text.admin');
   
   $action = array_merge($defaults, (array)$action);
   $form = array(
