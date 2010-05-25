@@ -1,6 +1,0 @@
-; $Id$
-name = Imagecache Text Actions
-description = DEPRECATED: Display simple or dynamic captions on images. (migrate your settings to imagecache_textrender)
-dependencies[] = imagecache
-package = ImageCache
-core = 6.x
