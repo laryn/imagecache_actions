@@ -117,7 +117,7 @@ function textrender_rendertext_image(&$image, $action = array()) {
   }
 
   // 2010-05-21 updated API call to imageapi_image_create_text
-
+  $text_style = (object)array();
   $text_style->style = imageapi_text_parse_style($action['textstyle']['style']);
   $text_style->fontfile = $action['textstyle']['fontfile'];
 

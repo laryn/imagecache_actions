@@ -210,7 +210,7 @@ function imagecache_actions_keyword_filter($value, $base_size, $layer_size) {
  * left+75%
  */
 function imagecache_actions_calculate_relative_position($base, $layer, $style) {
-  // $textimage should now have its size info available.
+  // both images should now have size info available.
 
   if (isset($style['bottom'])) {
     $ypos = imagecache_actions_calculate_offset('bottom', $style['bottom'], $base->info['height'], $layer->info['height']);
@@ -234,7 +234,7 @@ function imagecache_actions_calculate_relative_position($base, $layer, $style) {
   }
   #dpm(__FUNCTION__ . " Calculated offsets");  
   #dpm(get_defined_vars());
-
+dpm(get_defined_vars());
   return array('x' => $xpos, 'y' => $ypos);
 }
 
@@ -251,6 +251,8 @@ function imagecache_actions_calculate_relative_position($base, $layer, $style) {
  * bottom,-20, 200, 100 = 220
  * right, -25%, 200, 100 = 200 (this ends up just offscreen)
  * 
+ * 
+ * Also, the value can be a string, eg "bottom-100", or "center+25%"
  */
 function imagecache_actions_calculate_offset($keyword, $value, $base_size, $layer_size) {
   $offset = 0; // used to account for dimensions of the placed object
@@ -265,6 +267,48 @@ function imagecache_actions_calculate_offset($keyword, $value, $base_size, $laye
     $base = $base_size/2;
     $offset = -1 * ($layer_size / 2);
   }
+  
+  // Keywords may be used to stand in for numeric values
+  switch ($value) {
+    case 'left' :
+    case 'top' :
+      $value = 0;
+    break;
+    case 'middle' :
+    case 'center' :
+      $value = $base_size/2;
+    break;
+    case 'bottom' :
+    case 'right' :
+      $value = $base_size;
+  }
+  
+  // Handle keyword-number cases
+  // top+50% or bottom-100px
+  if (preg_match('/^(.+)([\+\-])(\d+)([^\d]*)$/', $value, $results)) {
+    list($match, $value_key, $value_mod, $mod_value, $mod_unit) = $results;
+    if ($mod_unit == '%') {
+      $mod_value = $mod_value / 100 * $base_size;
+      $mod_unit = 'px';
+    }
+    $mod_direction = ($value_mod == '-') ? -1 : +1;
+    switch ($value_key) {
+      case 'left' :
+      case 'top' :
+        $mod_base = 0;
+      break;
+      case 'middle' :
+      case 'center' :
+        $mod_base = $base_size/2;
+      break;
+      case 'bottom' :
+      case 'right' :
+        $mod_base = $base_size;
+    }
+    $modified_value = $mod_base + ($mod_direction * $mod_value);    
+    return $modified_value;    
+  }
+  #dpm(get_defined_vars());
 
   // handle % values
   if (substr($value, strlen($value)-1, 1) == '%') {
