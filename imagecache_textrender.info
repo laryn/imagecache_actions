@@ -1,7 +1,0 @@
-; $Id$
-name = Imagecache Text Rendering
-description = Display simple or dynamic captions on images, with formatting and layout.
-dependencies[] = imagecache
-dependencies[] = imageapi_text
-package = ImageCache
-core = 6.x
