@@ -6,6 +6,10 @@
  * layers, preserving transparency.
  */
 
+// Not sure where this library will live between upgrade versions.
+// Be careful to not conflict with another copy of myself.
+if (! function_exists('imageapi_image_overlay')) {
+
 /**
  * Place one image over another
  *
@@ -149,4 +153,6 @@ function imageapi_imagemagick_image_overlay(&$image, &$layer, $x = 0, $y = 0, $a
   // How to let the object know?
 
   return TRUE;
+}
+
 }
