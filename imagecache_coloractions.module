@@ -18,7 +18,10 @@
 // During devel, caching is pointless. Flush it
 //imagecache_action_definitions(TRUE);
 
-require_once(dirname(__FILE__) .'/utility.inc');
+if (! function_exists('imagecache_actions_calculate_relative_position') ) {
+  module_load_include('inc', 'imagecache_coloractions', 'utility');
+}
+module_load_include('inc', 'imagecache_coloractions', 'utility-color');
 
 /**
  * Implementation of hook_imagecache_actions().

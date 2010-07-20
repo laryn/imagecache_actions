@@ -13,6 +13,17 @@
  *
  */
 
+if (! function_exists('imageapi_image_overlay') ) {
+  module_load_include('inc', 'imagecache_canvasactions', 'imageapi_image_overlay');
+}
+if (! function_exists('imagecache_actions_pos_form') ) {
+  module_load_include('inc', 'imagecache_canvasactions', 'utility-form');
+}
+if (! function_exists('imagecache_actions_keyword_filter') ) {
+  module_load_include('inc', 'imagecache_canvasactions', 'utility');
+}
+
+
 /**
  * Implementation of imagecache_hook_form()
  *
@@ -85,7 +96,7 @@ function canvasactions_definecanvas_form($action) {
         '#size' => 5,
       ),
     );
-  $form['exact'] = array_merge($form['exact'], imagecacheactions_pos_form($action['exact']));
+  $form['exact'] = array_merge($form['exact'], imagecache_actions_pos_form($action['exact']));
   if (! $action['exact']['width'] && !$action['exact']['height']) {
     $form['exact']['#collapsed'] = TRUE;
   }
@@ -195,7 +206,7 @@ function canvasactions_definecanvas_image(&$image, $action = array()) {
   }
 
   // convert from hex (as it is stored in the UI)
-  if ($action['RGB']['HEX'] && $deduced = hex_to_rgb($action['RGB']['HEX'])) {
+  if ($action['RGB']['HEX'] && $deduced = imagecache_actions_hex2rgba($action['RGB']['HEX'])) {
     $action['RGB'] = array_merge($action['RGB'], $deduced);
   }
   
@@ -208,43 +219,6 @@ function canvasactions_definecanvas_image(&$image, $action = array()) {
     $image->info['height'] = $targetsize['height'];
   }
   return $success;
-
-/*
-
-  $newcanvas = imagecreatetruecolor($targetsize['width'], $targetsize['height']);
-
-  if ($RGB['HEX'] && $deduced = hex_to_rgb($RGB['HEX'])) {
-    $background = imagecolorallocate($newcanvas, $RGB['red'], $RGB['green'], $RGB['blue']);
-  }
-  else {
-    // No color, attempt transparency, assume white
-    $background = imagecolorallocatealpha($newcanvas, 255, 255, 255, 127);
-    imagesavealpha($newcanvas, TRUE);
-    imagealphablending($newcanvas, FALSE);
-    imagesavealpha($image->resource, TRUE);
-  }
-  imagefilledrectangle($newcanvas, 0, 0, $targetsize['width'], $targetsize['height'], $background);
-#  imagealphablending($newcanvas, TRUE);
-
-  if ($action['under']) {
-    $canvas_object = (object) array(
-      'resource' => $newcanvas,
-      'info' => array(
-        'width' => $targetsize['width'], 
-        'height' => $targetsize['height'],
-        'mime_type' => 'image/png',
-      ),
-      'toolkit' => $image->toolkit,
-    );
-    imageapi_image_overlay($canvas_object, $image, $targetsize['left'], $targetsize['top'], 100, TRUE);
-  } 
-  else {
-    $image->resource = $newcanvas ;
-  }
-*/  
-  $image->info['width'] = $targetsize['width'];
-  $image->info['height'] = $targetsize['height'];
-  return TRUE;
 }
 
 /**
@@ -343,7 +317,7 @@ function canvasactions_canvas2file_form($action) {
   );
   $action = array_merge($defaults, (array)$action);
 
-  $form = imagecacheactions_pos_form($action);
+  $form = imagecache_actions_pos_form($action);
   $form['alpha'] = array(
     '#type' => 'textfield',
     '#title' => t('opacity'),
@@ -484,7 +458,7 @@ function canvasactions_file2canvas_form($action) {
       '#value' => t('Note that using a transparent overlay that is larger than the source image may result in unwanted results - a solid background.'),
     )
   );
-  $form += imagecacheactions_pos_form($action);
+  $form += imagecache_actions_pos_form($action);
   $form['alpha'] = array(
     '#type' => 'textfield',
     '#title' => t('opacity'),
@@ -569,7 +543,7 @@ function canvasactions_source2canvas_form($action) {
   );    
   $action = array_merge($defaults, (array)$action);   
     
-  $form = imagecacheactions_pos_form($action);    
+  $form = imagecache_actions_pos_form($action);    
   $form['alpha'] = array(   
       '#type' => 'textfield',   
       '#title' => t('opacity'),   

@@ -43,7 +43,9 @@
 // During devel, caching is pointless. Flush it
 // imagecache_action_definitions(TRUE);
 
-require_once(dirname(__FILE__) .'/utility.inc');
+if (! function_exists('imagecache_actions_calculate_relative_position') ) {
+  module_load_include('inc', 'imagecache_canvasactions', 'utility');
+}
 
 /**
 * Implementation of hook_imagecache_actions().
@@ -103,11 +105,11 @@ module_load_include('inc', 'imagcache_actions', 'imageapi_image_overlay.inc');
 function imagecache_canvasactions_theme() {
   return array(
     'imagecacheactions_rgb_form' => array(
-      'file'      => 'utility.inc',
+      'file'      => 'utility-color.inc',
       'arguments' => array('form' => NULL),
     ),
     'imagecacheactions_rgb' => array(
-      'file'      => 'utility.inc',
+      'file'      => 'utility-color.inc',
       'arguments' => array('rgb' => NULL),
     ),
     'canvasactions_definecanvas' => array(
