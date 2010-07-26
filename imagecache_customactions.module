@@ -54,13 +54,27 @@ function imagecache_customactions_imagecache_actions() {
       'name' => t('Custom action'),
       'description' => t('Runs custom PHP code'),
     ),
+    'imagecache_subroutine' => array(
+      'name' => 'Subroutine',
+      'description' => 'Runs another defined preset on the image.',
+    ),
   );
   return $actions;
 }
 
+/**
+ * Implementation of theme_hook() for imagecache_customactions.module
+ */
+function imagecache_customactions_theme() {
+  return array(
+    'imagecache_subroutine' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
 
 /**
- * 
  * Implementation of imagecache_hook_form()
  *
  * @param $action array of settings for this action
@@ -140,4 +154,75 @@ function imagecache_customactions_image($image, $action) {
 function theme_imagecache_customactions($element) {
   $data = $element['#value'];
   return "<em><strong>". $data['text'] ."</strong></em>" ;
+}
+
+
+
+
+/**
+ * Subroutine - an imagecache action that just calls another one.
+ * 
+ * Contributed by Alan D
+ * http://drupal.org/node/618784
+ * 
+ * Reworked into customactions by dman 2010-07
+ */
+
+/**
+ * Config form for this preset.
+ * 
+ * Implementation of imagecache_hook_form()
+ *
+ * @param $action array of settings for this action
+ * @return a form definition
+ */
+function imagecache_subroutine_form($action) {
+  $action = (array)$action;
+  $form = array();
+
+  // List available presets
+  $presets = array();
+  foreach (imagecache_presets(TRUE) as $preset) {
+    $presets[$preset['presetid']] = $preset['presetname'];
+  }
+
+  $form['presetid'] = array(
+    '#type' => 'select',
+    '#title' => t('Preset to call'),
+    '#default_value' => $action['presetid'],
+    '#options' => $presets,
+  );
+
+  return $form;
+}
+
+
+/**
+ * Actually invoke the action - which means just handing off to the named real
+ * preset to do the job.
+ * 
+ * Implementation of hook_image()
+ *
+ * @param $image
+ * @param $action
+ */
+function imagecache_subroutine_image(&$image, $data) {
+  if ($preset = imagecache_preset($data['presetid'])) {
+    foreach ($preset['actions'] as $sub_action) {
+      _imagecache_apply_action($sub_action, $image);
+    }
+  }
+  return TRUE;
+}
+
+
+/**
+ * This lets the user see what parameters were selected for the action
+ */
+function theme_imagecache_subroutine($element) {
+  $data = $element['#value'];
+  if ($preset = imagecache_preset($data['presetid'])) {
+    return t('%name (pid: !presetid)', array('%name' => $preset['presetname'], '!presetid' => $preset['presetid']));
+  }
+  return t('<span class="error">Invalid reference. The referenced preset may have been deleted!</span>');
 }
