@@ -21,7 +21,7 @@ $presets['keyword_positioning'] = array (
         'xpos' => 'right',
         'ypos' => 'top',
         'alpha' => '100',
-        'path' => "$filepath/grid-240x160.png",
+        'path' => drupal_get_path('module', 'imagecache_testsuite') . "/grid-240x160.png",
       ),
     ),
 
