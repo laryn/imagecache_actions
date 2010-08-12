@@ -713,7 +713,7 @@ function imageapi_gd_image_roundedcorners(&$image, $action = array()) {
   imagealphablending($im, FALSE);
 
   foreach ($corners as $key) {
-    if ($independent_corners) {
+    if ($independent_corners && isset($action['independent_corners_set']['radii'][$key])) {
       $r = $action['independent_corners_set']['radii'][$key];
     } 
     else {
