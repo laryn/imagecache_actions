@@ -19,9 +19,9 @@
 //imagecache_action_definitions(TRUE);
 
 if (! function_exists('imagecache_actions_calculate_relative_position') ) {
-  module_load_include('inc', 'imagecache_coloractions', 'utility');
+  module_load_include('inc', 'imagecache_actions', 'utility');
 }
-module_load_include('inc', 'imagecache_coloractions', 'utility-color');
+module_load_include('inc', 'imagecache_actions', 'utility-color');
 
 /**
  * Implementation of hook_imagecache_actions().
@@ -213,11 +213,10 @@ function imagecache_inverse_image(&$image, $data = array()) {
  * @return bool success
  */
 function imagecache_imagefilter($image, $data) {
-  if ($image->toolkit != 'imageapi_gd') {
-    drupal_set_message("Imagefilter is only currently supported for GD toolkit. Code welcome.", 'error');
-    return FALSE;
-  }
-  if (! imagecache_gd_imagefilter($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL)) {
+  $funcname =  $image->toolkit . '_imagefilter';
+  $success = $funcname($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL );
+  
+  if (! $success) {
     watchdog('imagecache', 'imagecache_imagefilter failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
     return FALSE;
   }
@@ -229,7 +228,8 @@ function imagecache_imagefilter($image, $data) {
  * gdtoolkit. If it isn't, a local script is used to emulate the simpler of its
  * functions.
  */
-function imagecache_gd_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
+function imageapi_gd_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
+
   // some distros that allegedly include PHP5 GD2 are faulty.
   // thankyou http://www.weberdev.com/get_example-4601.html
   if (!function_exists('imagefilter')) {
@@ -256,6 +256,25 @@ function imagecache_gd_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
   }
 }
 
+/**
+ * Try to emulate some imagefilter actions with imagemagick.
+ * 
+ */
+function imageapi_imagemagick_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
+
+  switch ($filter) {
+    case 4 : # colorize
+      $R100 = round($arg1 / 255 * 100);
+      $G100 = round($arg2 / 255 * 100);
+      $B100 = round($arg3 / 255 * 100);
+      $image->ops[] = "-fill rgb\\($arg1,$arg2,$arg3\\) -colorize 50\\%"; 
+      return TRUE;
+    break; 
+  }
+  
+  drupal_set_message("Imagefilter is only currently supported for GD toolkit. Code welcome.", 'error');
+  return FALSE;  
+}
 
 /**
  * Implementation of imagecache_hook_form()

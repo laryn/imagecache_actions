@@ -102,7 +102,6 @@ function imagecache_testsuite_generate($test_id = '', $toolkit = 'gd') {
       }
       else {
         $sample_img = "[no sample]";
-dpm(array("No {$testname}.jpg" => $sample_folders));
       }
       $row['sample'] = $sample_img;
 

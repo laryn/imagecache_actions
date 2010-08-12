@@ -125,33 +125,55 @@ function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reve
  * behind. Using the latest imagemagick release features will make this function
  * unusable in real deployments.
  * 
+ * @param $image 
+ *   Base imageapi object.
+ * @param $layer 
+ *   May be a filename or an imageAPI object, gets placed on top
+ *   If using reverse, this is going to be the result we carry on working with.
  */
 function imageapi_imagemagick_image_overlay(&$image, &$layer, $x = 0, $y = 0, $alpha = 100, $reverse = FALSE) {
-  $layer_filepath = $layer->source;
+    
   # TODO - alpha channels
   # I spent ages on the docs, but it appears my version of convert does not support -merge, -watermark or -dissolve
   // Bloody libraries - I tried  [6.2.8 06/11/08] because thats what I could get for my distro.
-  
-  # This just drops the image on, no alpha:
-  if ($alpha == 100) {
-    $image->ops[] = "  \"$layer_filepath\" -geometry +$x+$y  -composite    "  ;
+
+  // arguments require a + in front, unless they are negative.
+  if ($x >= 0) {
+    $x = "+$x";
+  }
+  if ($y >= 0) {
+    $y = "+$y";
+  }
+  $geometry_arg = " -geometry $x$y ";
+  $compose_arg = " ";
+  $alpha_arg = " ";
+
+  if ($alpha != 100) {
+    $alpha_arg = " -set \"option:compose:args\" $alpha ";
+  }
+
+  // Normal, second image goes on top of the first  
+  if (!$reverse) {
+    $layer_filepath = $layer->source;
+    $image->ops[] = "  \"$layer_filepath\" $geometry_arg $compose_arg $alpha_arg  -composite ";
   }
   else {
-    $compose_arg = "  ";
-    # $compose_arg = " -compose dissolve ";
-    // -compose disolve is supposed to work, but doesn't in available imagemagick versions
-    $geometry_arg = " -geometry +$x+$y ";
-    $alpha_arg = " -set \"option:compose:args\" $alpha ";
-    $image->ops[] = "  \"$layer_filepath\" $compose_arg $geometry_arg $alpha_arg  -composite ";
- 
+    // If in reverse, we cannot stop the first image from being the 
+    // first in the imagemagick queue. the +swap argument seems to be what we need.
+    $layer_filepath = $image->source;
+    $compose_arg = ' +swap';
+    $image->ops[] = "  \"$layer_filepath\" $geometry_arg $compose_arg $alpha_arg  -composite ";
+    $layer->ops = array_merge($layer->ops, $image->ops);
+    $layer->info = $image->info;
   }
+  
   #  watchdog('imagecache_canvas', print_r($image->ops, 1) );          
   # This also worked
   #  $image->ops[] = ' -draw "image over {$x},{$y} 0,0 \'{$layer_filepath}\'"'  ;
 
   // TODO - I may end up with a different sized image from doing this?
   // How to let the object know?
-
+  #dpm(get_defined_vars());
   return TRUE;
 }
 

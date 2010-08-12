@@ -60,22 +60,22 @@ function imagecache_canvasactions_imagecache_actions() {
     'canvasactions_definecanvas' => array(
       'name' => t('Define Canvas'),
       'description' => t('Define the size of the working canvas and background color, this controls the dimensions of the output image..'),
-      'file' => $util_dir . '/canvasactions.inc',
+      'file' => 'canvasactions.inc',
     ),
     'canvasactions_file2canvas' => array(
       'name' => t('Overlay (watermark)'),
       'description' => t(' Choose the file image you wish to use as an overlay, and position it in a layer on top of the canvas.'),
-      'file' => $util_dir . '/canvasactions.inc',
+      'file' => 'canvasactions.inc',
     ),
     'canvasactions_canvas2file' => array(
       'name' => t('Underlay (background)'),
       'description' => t(' Choose the file image you wish to use as an background, and position the processed image on it.'),
-      'file' => $util_dir . '/canvasactions.inc',
+      'file' => 'canvasactions.inc',
     ),
     'canvasactions_source2canvas' => array(    
      'name' => t('Overlay: source image to canvas'),
      'description' => t('Places the source image onto the canvas for compositing.'),   
-     'file' => $util_dir . '/canvasactions.inc',    
+     'file' => 'canvasactions.inc',    
     ),
     'canvasactions_roundedcorners' => array(
       'name' => t('Rounded Corners'),
@@ -85,7 +85,7 @@ function imagecache_canvasactions_imagecache_actions() {
     'canvasactions_aspect' => array(
       'name' => t('Aspect switcher: Switch between portrait and landscape.'),
       'description' => t(' Use different effects depending on whether the image is landscape of portrait shaped. This re-uses other preset definitions, and just chooses between them based on the rule.'),
-      'file' => $util_dir . '/canvasactions.inc',
+      'file' => 'canvasactions.inc',
     ),
 
   );
@@ -106,19 +106,19 @@ function imagecache_canvasactions_theme() {
   $util_dir = drupal_get_path('module', 'imagecache_actions');
   return array(
     'canvasactions_definecanvas' => array(
-      'file'      => $util_dir . '/canvasactions.inc',
+      'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_file2canvas' => array(
-      'file'      => $util_dir . '/canvasactions.inc',
+      'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_source2canvas' => array(
-      'file'      => $util_dir . '/canvasactions.inc',
+      'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_canvas2file' => array(
-      'file'      => $util_dir . '/canvasactions.inc',
+      'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_roundedcorners' => array(
@@ -126,7 +126,7 @@ function imagecache_canvasactions_theme() {
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_aspect' => array(
-      'file'      => $util_dir . '/canvasactions.inc',
+      'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
   );

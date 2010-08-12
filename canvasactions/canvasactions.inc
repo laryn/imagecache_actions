@@ -14,13 +14,13 @@
  */
 
 if (! function_exists('imageapi_image_overlay') ) {
-  module_load_include('inc', 'imagecache_canvasactions', 'imageapi_image_overlay');
+  module_load_include('inc', 'imagecache_actions', 'imageapi_image_overlay');
 }
 if (! function_exists('imagecache_actions_pos_form') ) {
-  module_load_include('inc', 'imagecache_canvasactions', 'utility-form');
+  module_load_include('inc', 'imagecache_actions', 'utility-form');
 }
 if (! function_exists('imagecache_actions_keyword_filter') ) {
-  module_load_include('inc', 'imagecache_canvasactions', 'utility');
+  module_load_include('inc', 'imagecache_actions', 'utility');
 }
 
 
@@ -161,7 +161,7 @@ function theme_canvasactions_definecanvas($element) {
     $output .= ' top:'. $action['relative']['topdiff'];
     $output .= ' bottom:'. $action['relative']['bottomdiff'];
   }
-  $output .= theme_imagecacheactions_rgb($action['RGB']);
+  $output .= theme('imagecacheactions_rgb', $action['RGB']);
   $output .= ($action['under']) ? t(" <b>under</b> image ") : t(" <b>over</b> image ");
   return $output ;
 }
@@ -274,22 +274,32 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
 function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
   $targetsize = $action['targetsize'];
   $RGB = $action['RGB'];
+  $compose = "";
   
-  # TODO needs work.
-  #
-  $crop = " -background '#{$RGB['HEX']}' -crop   '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
-  $draw = '';
-
-  $draw = " -draw '";
-  $draw .= " fill '#{$RGB['HEX']}' polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
-  $draw .= " ' ";
-  #$draw .= " -composite ";
-  $draw .= " +repage ";
-
-  $compose = " $crop $draw ";
+  if ($action['under']) {
+    if ($RGB['HEX']) {
+      $compose .= "-background '#{$RGB['HEX']}' ";
+    }
+    else {
+      $compose .= "-background transparent ";
+    }
+    $compose .= " -crop '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
+    # http://www.imagemagick.org/Usage/layers/#flatten
+    $compose .= "-page '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' -flatten";
+    $compose .= " +repage ";
+  }
+  else {
+    // setting canvas over is really just replacing everything with a fill
+    if ($RGB['HEX']) {
+      $compose .= "-fill '#{$RGB['HEX']}' ";
+    }
+    else {
+      $compose .= "-fill transparent ";
+    }
+    $compose .= " -draw 'color 0,0 reset'";
+  }
   $image->ops[] = $compose; 
   return TRUE; 
-  
 }
 
 
@@ -378,7 +388,7 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
     return FALSE;
   }
   
-  $underlay = imageapi_image_open($filepath);
+  $underlay = imageapi_image_open($filepath, $image->toolkit);
 
   // To handle odd sizes, we will resize/crop the background image to the desired dimensions before 
   // starting the merge. The built-in imagecopymerge, and the watermark library both do not
@@ -423,7 +433,8 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   #dpm(get_defined_vars());
   // This func modifies the underlay image by ref, placing the current canvas on it
   if (imageapi_image_overlay($underlay, $image, $action['xpos'], $action['ypos'], $action['alpha'], TRUE)) {
-    $image->resource = $underlay->resource;
+    #$image->resource = $underlay->resource;
+    $image = $underlay;
     return TRUE;
   }
 }
@@ -513,7 +524,9 @@ function canvasactions_file2canvas_image(&$image, $action = array()) {
   }
   if (! isset($overlay) || ! $overlay) {
     trigger_error(t("Failed to find overlay image %path for imagecache_actions file-to-canvas action. File was not found in the sites 'files' path or the current theme folder.", array('%path' => $action['path'])), E_USER_WARNING);
-    return FALSE;
+    // return FALSE;
+    // Warn, but continue anyway
+    return TRUE;
   }
   if (! isset($action['alpha']) ) {
     $action['alpha'] = 100;

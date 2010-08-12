@@ -24,6 +24,9 @@ $presets['rounded_flattened'] = array (
           'independent_corners' => 1,
           'radii' => array (
             'tr' => '100',
+            'br' => '0',
+            'tl' => '0',
+            'bl' => '0',
           ),
         ),
         'antialias' => true,
