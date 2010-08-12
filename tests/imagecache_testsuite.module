@@ -47,6 +47,8 @@ function imagecache_testsuite_form_alter(&$form, &$form_state, $form_id) {
 function imagecache_testsuite_generate($test_id = '', $toolkit = 'gd') {
 
   $sample_path = drupal_get_path('module' , 'imagecache_testsuite') ;
+  $sample_folders = imagecache_testsuite_get_folders();
+
   $src = $sample_path .'/sample.jpg'; 
   $tests = imagecache_testsuite_get_tests();
   $testsuite_dir = imagecache_create_path('testsuite', '');
@@ -69,7 +71,7 @@ function imagecache_testsuite_generate($test_id = '', $toolkit = 'gd') {
         if ($definition) {
           $description = "<b>{$definition['name']}</b> ";
           $description .= theme($action['action'], array('#value' => $action['data']));
-          $details = "<div>$description</div>";
+          $details .= "<div>$description</div>";
         }
         else {
           // probably an action that requires a module that is not installed.
@@ -80,23 +82,27 @@ function imagecache_testsuite_generate($test_id = '', $toolkit = 'gd') {
       }
       $row['details'] = "<h3>$testname</h3><p>$details</p>";
 
-      // look for a sample image. May also be defined by the definition itself, 
-      // but normally assume a file named after the presetname
-      if (file_exists("{$sample_path}/{$testname}.png")) {
-        $preset['sample'] = "{$testname}.png";
+      // Look for a sample image. May also be defined by the definition itself, 
+      // but normally assume a file named after the presetname, in the preset file path.
+      foreach ($sample_folders as $sample_folder) {
+        if (file_exists("{$sample_folder}/{$testname}.png")) {
+          $preset['sample'] = "{$sample_folder}/{$testname}.png";
+        }
+        elseif (file_exists("{$sample_folder}/{$testname}.jpg")) {
+          $preset['sample'] = "{$sample_folder}/{$testname}.jpg";
+        }
       }
-      elseif (file_exists("{$sample_path}/{$testname}.jpg")) {
-        $preset['sample'] = "{$testname}.jpg";
-      }
-      if (isset($preset['sample']) && file_exists("{$sample_path}/{$preset['sample']}") ) {
-        $sample_img = theme('image', "{$sample_path}/{$preset['sample']}");
+      
+      if (isset($preset['sample']) && file_exists($preset['sample']) ) {
+        $sample_img = theme('image', $preset['sample']);
         // I was having trouble with permissions on an OSX dev machine
-        if (! is_readable("{$sample_path}/{$preset['sample']}")) { 
+        if (! is_readable($preset['sample'])) { 
           $sample_img = "FILE UNREADABLE: {$preset['sample']}"; 
         }
       }
       else {
         $sample_img = "[no sample]";
+dpm(array("No {$testname}.jpg" => $sample_folders));
       }
       $row['sample'] = $sample_img;
 
@@ -160,14 +166,28 @@ function imagecache_testsuite_generate($test_id = '', $toolkit = 'gd') {
  */
 function imagecache_testsuite_get_tests() {
   $presets = array();
-  $filepath = drupal_get_path('module', 'imagecache_testsuite');
-  // The $filepath MAY be used by some of the presets to locate extra images like overlays.
-  // It is present in scope when these incs are evaluated.
-
-  $preset_files = file_scan_directory($filepath, ".*.imagecache_preset.inc");
-  foreach($preset_files as $preset_file) {
-    include_once($preset_file->filename);
+  $folders = imagecache_testsuite_get_folders();
+  
+  foreach ($folders as $folder) {
+    $preset_files = file_scan_directory($folder, ".*.imagecache_preset.inc");
+    // Setting filepath in this scope allows the tests to know where they are.
+    // The inc files may use it to create their rules.
+    $filepath = $folder;
+    foreach($preset_files as $preset_file) {
+      include_once($preset_file->filename);
+    }
   }
   uasort($presets, 'element_sort');
   return $presets;
+}
+
+/**
+ * Places to scan for test presets and sample images
+ */
+function imagecache_testsuite_get_folders() {
+  $folders = array(drupal_get_path('module', 'imagecache_testsuite'));
+  foreach (module_implements('imagecache_actions') as $module_name) {
+    $folders[] = drupal_get_path('module', $module_name) . '/tests';
+  }
+  return $folders;
 }
