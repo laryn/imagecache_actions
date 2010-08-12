@@ -55,37 +55,37 @@ if (! function_exists('imagecache_actions_calculate_relative_position') ) {
 * These funcs are all in their respective include libraries - as configured below
 */
 function imagecache_canvasactions_imagecache_actions() {
-
+  $util_dir = drupal_get_path('module', 'imagecache_actions');
   $actions = array(
     'canvasactions_definecanvas' => array(
       'name' => t('Define Canvas'),
       'description' => t('Define the size of the working canvas and background color, this controls the dimensions of the output image..'),
-      'file' => 'canvasactions.inc',
+      'file' => $util_dir . '/canvasactions.inc',
     ),
     'canvasactions_file2canvas' => array(
       'name' => t('Overlay (watermark)'),
       'description' => t(' Choose the file image you wish to use as an overlay, and position it in a layer on top of the canvas.'),
-      'file' => 'canvasactions.inc',
+      'file' => $util_dir . '/canvasactions.inc',
     ),
     'canvasactions_canvas2file' => array(
       'name' => t('Underlay (background)'),
       'description' => t(' Choose the file image you wish to use as an background, and position the processed image on it.'),
-      'file' => 'canvasactions.inc',
+      'file' => $util_dir . '/canvasactions.inc',
     ),
     'canvasactions_source2canvas' => array(    
      'name' => t('Overlay: source image to canvas'),
      'description' => t('Places the source image onto the canvas for compositing.'),   
-     'file' => 'canvasactions.inc',    
+     'file' => $util_dir . '/canvasactions.inc',    
     ),
     'canvasactions_roundedcorners' => array(
       'name' => t('Rounded Corners'),
       'description' => t(' This is true cropping, not overlays, so the result <em>can</em> be transparent.'),
-      'file' => 'canvasactions.inc',
+      'file' => 'rounded_corners.inc',
     ),
     'canvasactions_aspect' => array(
       'name' => t('Aspect switcher: Switch between portrait and landscape.'),
       'description' => t(' Use different effects depending on whether the image is landscape of portrait shaped. This re-uses other preset definitions, and just chooses between them based on the rule.'),
-      'file' => 'canvasactions.inc',
+      'file' => $util_dir . '/canvasactions.inc',
     ),
 
   );
@@ -103,37 +103,30 @@ module_load_include('inc', 'imagcache_actions', 'imageapi_image_overlay.inc');
  * Need to register the theme functions we expect to use
  */
 function imagecache_canvasactions_theme() {
+  $util_dir = drupal_get_path('module', 'imagecache_actions');
   return array(
-    'imagecacheactions_rgb_form' => array(
-      'file'      => 'utility-color.inc',
-      'arguments' => array('form' => NULL),
-    ),
-    'imagecacheactions_rgb' => array(
-      'file'      => 'utility-color.inc',
-      'arguments' => array('rgb' => NULL),
-    ),
     'canvasactions_definecanvas' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => $util_dir . '/canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_file2canvas' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => $util_dir . '/canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_source2canvas' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => $util_dir . '/canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_canvas2file' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => $util_dir . '/canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_roundedcorners' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => 'rounded_corners.inc',
       'arguments' => array('element' => NULL),
     ),
     'canvasactions_aspect' => array(
-      'file'      => 'canvasactions.inc',
+      'file'      => $util_dir . '/canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
   );

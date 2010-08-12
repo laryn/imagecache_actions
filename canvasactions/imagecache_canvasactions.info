@@ -3,6 +3,7 @@ name = Imagecache Canvas Actions
 description = Actions for manipulating image canvases layers, including watermark and background effect. Also an aspect switcher (portrait/landscape)
 dependencies[] = imagecache
 dependencies[] = imageapi
+dependencies[] = imagecache_actions
 package = ImageCache
 core = 6.x
 
