@@ -1,0 +1,8 @@
+; $Id$
+name = Imagecache Actions
+description = Base for imagecache utilities used by the individual imagecache actions
+dependencies[] = imagecache
+dependencies[] = imageapi
+package = ImageCache
+core = 6.x
+
