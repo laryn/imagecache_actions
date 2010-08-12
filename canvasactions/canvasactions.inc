@@ -605,7 +605,11 @@ function canvasactions_source2canvas_image(&$image, $action = array()) {
  * @return a form definition
  */
 function canvasactions_aspect_form($action) {
-  $defaults = array( 'ratio_adjustment' => 1 );
+  $defaults = array( 
+    'ratio_adjustment' => 1,
+    'portrait' => NULL,
+    'landscape' => NULL,
+  );
   $action = array_merge($defaults, (array)$action);
   
   $form = array(
@@ -687,6 +691,21 @@ function canvasactions_aspect_image(&$image, $action = array()) {
   // Run the preset actions ourself. Cannot invoke a preset from the top as it handles filenames, not image objects.
   // ripped from imagecache_build_derivative()
   foreach ($preset['actions'] as $sub_action) {
+
+    // _imagecache_apply_action requires some of the values to be pre-cooked
+    // Identified in http://drupal.org/node/626168
+    // These actions really should interpret the parameters themselves.
+    foreach (array('height', 'width') as $param) {
+      if (isset($sub_action['data'][$param])) {
+        $sub_action['data'][$param] = _imagecache_percent_filter($sub_action['data'][$param], $image->info[$param]);
+      }
+    }
+    foreach (array('xoffset' => 'width', 'yoffset' => 'height') as $param => $direction) {
+      if (isset($sub_action['data'][$param])) {
+        $sub_action['data'][$param] = _imagecache_keyword_filter($sub_action['data'][$param], $image->info[$direction], $sub_action['data'][$direction]);
+      }
+    }
+    
     _imagecache_apply_action($sub_action, $image);
   }
   return TRUE;
