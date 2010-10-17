@@ -97,6 +97,7 @@ function imagecache_actions_calculate_offset($keyword, $value, $base_size, $laye
   }
   
   // Handle keyword-number cases
+  // @see imagecache_actions_keyword_filter
   // top+50% or bottom-100px
   if (preg_match('/^(.+)([\+\-])(\d+)([^\d]*)$/', $value, $results)) {
     list($match, $value_key, $value_mod, $mod_value, $mod_unit) = $results;
@@ -196,5 +197,132 @@ function imagecache_actions_keyword_filter($value, $base_size, $layer_size) {
 function imagecache_include_standard_actions() {
   $cropaction = imagecache_action_definition('imagecache_crop');
   include_once($cropaction['file']);
+}
+
+
+
+/**
+ * Given only a file filename, track back to see if we can detect the parent
+ * node and provide some context info.
+ * 
+ * This will be different in different cases.
+ * Supported :
+ * image.module image nodes
+ * imagefield cck fields (may be multiple)
+ * upload.module attachments 
+ * 
+ * TODO: image_attach attachments
+ * 
+ * @param $filepath
+ * @param $file_data MAY get some details filled in on it by reference if data
+ * was found.
+ * 
+ * @return a loaded $node object
+ */
+function imagecache_actions_node_from_filepath($filepath, &$file_data = NULL) {
+
+  // lookup upload.module attachments
+  if (module_exists('upload')) {
+    $sql = "SELECT nid, f.fid FROM {upload} AS u INNER JOIN {files} AS f ON u.fid = f.fid WHERE f.filepath = '%s'";
+    $results = db_query_range($sql, $filepath, 0, 1);
+    if ( $row = db_fetch_array($results)) {
+      // Return immediately
+      $node = node_load($row['nid']);
+      // also include the file description
+      $file_data = $node->files[$row['fid']];
+      return $node;
+    }
+  }
+
+  // Lookup image.module nodes
+  if (module_exists('image')) {
+    $sql = "SELECT nid FROM {image} AS i INNER JOIN {files} AS f ON i.fid = f.fid WHERE f.filepath = '%s'";
+    if ( $nid = db_result(db_query_range($sql, $filepath, 0, 1))) {
+      // Return immediately
+      return node_load($nid);
+    }
+  }
+
+
+  // Lookup filefield imagefield CCK attachments.
+  //
+  // Drupal 6 version here based largely on work done by mikeytown2 
+  // http://drupal.org/node/363434
+  
+  // This is a terrible way to retrieve information, but CCK doesn't provide a way to reverse-lookup like this
+  // BAD CODE follows
+  // If someone could roll these DBlookups into a smaller ball, that would be fun.
+  // Due to CCKs use of dynamically created table names .. I don't know how.
+  
+  // Multiple file ID's might have the same name, get all 
+  // (but return just the first successful match)
+  $result = db_query("SELECT fid FROM {files} WHERE filepath = '%s'", $filepath);
+  $fids = array();
+  while ($row = db_fetch_array($result)) {
+    $fids[] = $row['fid'];
+  }
+
+  if (! empty($fids)) {
+    // Find out if any filefield contains this file, and if so, which field
+    // and node it belongs to. Required for later access checking.
+    // CCK field analysis is in the outer loop, 
+    // fids are scanned in the inner loop for a little speed.
+
+    // Get A List Of ALL CCK Fields and look for them individually, 
+    // it's the only way we can reverse the lookups
+    foreach (content_fields() as $field) {
+      // If Field is an Image (imagefield.module) or filefield then
+      if ($field['type'] == 'image' || $field['type'] == 'filefield') {
+        // Need to do lots of lookups to find out what the storage tables look like.
+        // Grab All DB Column Names for that CCK Field
+        $db_info = content_database_info($field);
+        // Get Content Type DB name - FROM statement
+        $tablename = $db_info['table'];
+        //Get File ID DB Column Name - WHERE statement
+        $fid_column = $db_info['columns']['fid']['column'];
+
+        // Construct a Query that looks for all known fids in one go.
+        // eg:
+        // SELECT nid FROM content_type_story 
+        //   WHERE field_illustration_fid = 77 
+        //   OR field_illustration_fid = 99;
+        
+        $wheres = array();
+        $query_args = array();
+        foreach ($fids as $fid) {
+          $wheres[] = " %s = %d ";
+          $query_args[] = $fid_column; 
+          $query_args[] = $fid; 
+        }
+
+        $result = db_query('SELECT nid FROM {'. $tablename .'} WHERE '. join(' OR ', $wheres), $query_args);
+        
+        while ($row = db_fetch_array($result)) {
+          // This while is a dummy loop - Just break out and return the first matching node. 
+          // If more than one node owns this image then ???
+          $node = node_load($row['nid']);
+
+          // Add even more info - the description "data" that MAY have been added 
+          // to this file on this node using filefield_meta and stuff.
+          // Return the data associated specifically with this file also;
+          // Do this via the handle on the file_data object we were passed in.
+          // Slightly mushed together - I want it to mostly resemble the traditional file attachment object.
+          
+          // We have the node but lost track of the file in the process.
+          // Need to scan again to make sure we got the right one :-{
+          if ( $file_fields = $node->{$field['field_name']} ) {
+            foreach ($file_fields as $file_field) {
+              if ($file_field['fid'] == $fid) {
+                $actual_file = $file_field;
+              }
+            }
+            $file_data = (object) array_merge((array)$file_data, $actual_file['data'], $actual_file);
+
+          }
+          return $node;
+        }
+      }
+    }
+  }
 }
 

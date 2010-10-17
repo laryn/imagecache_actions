@@ -4,3 +4,5 @@ description = Displays a collection of demo presets.
 dependencies[] = imagecache
 package = ImageCache
 core = 6.x
+
+features[imagecache][] = 'corners_combo'

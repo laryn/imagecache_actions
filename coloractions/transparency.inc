@@ -23,6 +23,29 @@ function imagecache_alpha_form($action) {
   $action = array_merge($defaults, (array)$action);
   
   $form = array();
+  $form['help'] = array('#value' => t(
+    "<p>You can <em>either</em> set the alpha values of the image to a fixed 
+      amount by defining opacity, <em>or</em> choose a color and let the
+      darkness of the image pixels define an opacity. 
+      These are different effects. Don't do both
+      or you will just get a plain block of color of a certain opacity. 
+    "));
+
+  $form['opacity'] = array( 
+    '#type' => 'textfield', 
+    '#title' => t('Opacity'), 
+    '#default_value' => $action['opacity'],
+    '#size' => 3,
+    '#description' => t("
+      A decimal between 0 and 1.
+      You can define the amount of transparency to apply, eg 0.8 (80%) opacity 
+      will make the image slightly transparent. 
+      Use this with <em>no</em> fill color defined for normal results.
+      If you follow up by flattening the image onto white or grey, 
+      this will have the effect of partial desaturation.
+    "),
+  );
+
   $form['description'] = array('#value' => t(
     "<p>Alpha toning is an advanced method of greyscaling or colorizing. 
       It works using transparency, not colour matching. 
@@ -42,7 +65,7 @@ function imagecache_alpha_form($action) {
     Although this image will end up as an alpha transparency mask, 
     it still has to have some colour to be visible. 
     Black is safe. Dark Sepia #704214 is good too. 
-    If it's not set, the colors will be left as they were, but will unsaturate unevenly.
+    Set it to nothing to not perform any color shift.
     ");
   
 
@@ -61,7 +84,8 @@ function imagecache_alpha_form($action) {
  * Implementation of theme_hook() for imagecache_ui.module
  */
 function theme_imagecache_alpha($element) {
-  return  ($element['#value']['flatten'] ? t("Flatten") : t("Transparent")) 
+  return  ($element['#value']['flatten'] ? t("Flatten") : t("Transparent"))
+    . ($element['#value']['opacity'] ? " : " . ($element['#value']['opacity'] * 100) . '%' : '') 
     ." : ". theme_imagecacheactions_rgb($element['#value']['RGB']);
 }
 
@@ -88,7 +112,7 @@ function imagecache_alpha_image(&$image, $data = array()) {
   if (! $data['flatten']) {
     // given an image, convert dark areas to opaque, 
     // light to transparent,
-    return png_color2alpha($image, $data['RGB']['HEX']);
+    return png_color2alpha($image, $data['RGB']['HEX'], $data['opacity']);
   } 
   else {
     // Do the opposite, flatten the transparency ONTO the given colour
@@ -107,21 +131,21 @@ function imagecache_alpha_image(&$image, $data = array()) {
     // Start with a solid colour
     $background_rgb = hex_to_rgb($data['RGB']['HEX']) ;
 
-   // Setting the background colour here solid is what flattens the image
-   $background_color = @imagecolorallocatealpha($base_image, $background_rgb['red'], $background_rgb['green'], $background_rgb['blue'], 0) ;
-
-   // But what I really want to do is set it
-   // coloured rgb AND 100% transparent, in the hope that
-   // a failure to render transparency would instead render
-   // THAT colour.
+    // Setting the background colour here solid is what flattens the image
     $background_color = @imagecolorallocatealpha($base_image, $background_rgb['red'], $background_rgb['green'], $background_rgb['blue'], 0) ;
-   // But that still doesn't work.
-   // Yet somehow I've seen transparent images that fallback to white, not silver.
 
-   imagefill( $base_image, 0, 0, $background_color );
+    // But what I really want to do is set it
+    // coloured rgb AND 100% transparent, in the hope that
+    // a failure to render transparency would instead render
+    // THAT colour.
+    $background_color = @imagecolorallocatealpha($base_image, $background_rgb['red'], $background_rgb['green'], $background_rgb['blue'], 0) ;
+    // But that still doesn't work.
+    // Yet somehow I've seen transparent images that fallback to white, not silver.
 
-   // And set the overlay behaviour back again
-   imagealphablending($base_image, TRUE); 
+    imagefill( $base_image, 0, 0, $background_color );
+
+    // And set the overlay behaviour back again
+    imagealphablending($base_image, TRUE); 
  
     // Place the current image over it
     $foreground = $image->resource;
@@ -148,7 +172,7 @@ function imagecache_alpha_image(&$image, $data = array()) {
  * This algorithm runs maths per-pixel, and therefore is incredibly much more
  * inefficient than any native routine. Will kill the server on large images.
  */
-function png_color2alpha(&$image, $color) {
+function png_color2alpha(&$image, $color, $opacity = NULL) {
   #$image->info['extension'] = 'png';
   #$image->info['mime_type'] = 'image/png';
   $info = $image->info;
@@ -158,7 +182,7 @@ function png_color2alpha(&$image, $color) {
   imagesavealpha($im1, TRUE);
   imagealphablending($im1, FALSE);
 
-  if ($color) $background = hex_to_rgb($color);
+  if ($color) $background = imagecache_actions_hex2rgba($color);
   $width = imagesx($im1);
   $height = imagesy($im1);
 
@@ -166,7 +190,7 @@ function png_color2alpha(&$image, $color) {
     watchdog('imagecache_actions', __FUNCTION__ . " on {$image->source}. Image is TOO BIG to run the per-pixel algorithm. Aborting.");  
     return TRUE;
   }
-
+dpm(get_defined_vars());
   for ($i = 0; $i < $height; $i++) { //this loop traverses each row in the image
     for ($j = 0; $j < $width; $j++) { //this loop traverses each pixel of each row
 
@@ -174,15 +198,21 @@ function png_color2alpha(&$image, $color) {
       $retrieved_color = imagecolorat($im1, $j, $i); // an index
       $rgba_array = imagecolorsforindex($im1, $retrieved_color);
 
-      // Calculate the total shade value of this pixel.
-      $lightness = ( $rgba_array['red'] + $rgba_array['green'] + $rgba_array['blue'] ) /3;
-      // Need to flip the numbers around before doing maths.
-      #$opacity = 1-($rgba_array['alpha']/127);
-      #$darkness = 1-($lightness/256); // 0 is white, 1 is black
-      #$visibility = $darkness * $opacity;
-      #$alpha = (1-$visibility) * 127;
-
-      $alpha = (1- ((1-($lightness/256)) * (1-($rgba_array['alpha']/127)))) * 127;
+      if ($opacity) {
+        // It's a user-defined alpha value
+        $alpha = (1-$opacity) * 127;
+      }
+      else {
+        // Calculate the total shade value of this pixel.
+        $lightness = ( $rgba_array['red'] + $rgba_array['green'] + $rgba_array['blue'] ) /3;
+        // Need to flip the numbers around before doing maths.
+        #$opacity = 1-($rgba_array['alpha']/127);
+        #$darkness = 1-($lightness/256); // 0 is white, 1 is black
+        #$visibility = $darkness * $opacity;
+        #$alpha = (1-$visibility) * 127;
+  
+        $alpha = (1- ((1-($lightness/256)) * (1-($rgba_array['alpha']/127)))) * 127;
+      }
       if (!$color) $background=$rgba_array;
       // Paint the pixel.
       $color_to_paint = imagecolorallocatealpha($image->resource, $background['red'], $background['green'], $background['blue'], $alpha);
