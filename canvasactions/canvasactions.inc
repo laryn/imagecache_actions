@@ -267,41 +267,39 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
 
 /**
  * Draw a color (or transparency) behind an image
- * 
- * $targetsize is an array expected to contain a width,height and a left,top
+ * $targetsize is an array expected to contain a width,height and a left,top 
  * offset.
+ *
+ * Patched with code at issue http://drupal.org/node/844386
  */
 function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
   $targetsize = $action['targetsize'];
   $RGB = $action['RGB'];
-  $compose = "";
+  $backgroundcolor = $RGB['HEX'] != '' ? '#'. $RGB['HEX'] : 'None';
+   
+   # TODO needs work.
+   #
+  $background = " -background '{$backgroundcolor}' ";
   
+  $crop = " -crop   '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
+ 
+  $draw = " -draw '";
+  $draw .= " fill '{$RGB['HEX']}' polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
+  $draw .= " ' ";
+  $draw .= " +repage ";
+ 
+  $extent = " -extent '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!'";
+
   if ($action['under']) {
-    if ($RGB['HEX']) {
-      $compose .= "-background '#{$RGB['HEX']}' ";
-    }
-    else {
-      $compose .= "-background transparent ";
-    }
-    $compose .= " -crop '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
-    # http://www.imagemagick.org/Usage/layers/#flatten
-    $compose .= "-page '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' -flatten";
-    $compose .= " +repage ";
-  }
+    $compose = " $background $crop $extent ";
+  } 
   else {
-    // setting canvas over is really just replacing everything with a fill
-    if ($RGB['HEX']) {
-      $compose .= "-fill '#{$RGB['HEX']}' ";
-    }
-    else {
-      $compose .= "-fill transparent ";
-    }
-    $compose .= " -draw 'color 0,0 reset'";
+    $compose = " $background $crop $draw ";
   }
-  $image->ops[] = $compose; 
+
+  $image->ops[] = $compose;
   return TRUE; 
 }
-
 
 ////////////////////////////////////////////////
 
