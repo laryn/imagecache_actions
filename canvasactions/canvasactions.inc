@@ -686,6 +686,12 @@ function canvasactions_aspect_image(&$image, $action = array()) {
   $preset_name = (($aspect * $ratio_adjustment) > 1) ? $action['landscape'] : $action['portrait'];
   $preset = imagecache_preset_by_name($preset_name);
 
+  if (empty($preset)) {
+    // Required preset has gone missing?
+    watchdog('imagecache_canvasactions', "When running 'aspect' action, I was unable to load sub-action %preset_name. Either it's been deleted or the DB needs an update", array('%preset_name' => $preset_name), WATCHDOG_ERROR);
+    return FALSE;
+  }
+
   // Run the preset actions ourself. Cannot invoke a preset from the top as it handles filenames, not image objects.
   // ripped from imagecache_build_derivative()
   foreach ($preset['actions'] as $sub_action) {
