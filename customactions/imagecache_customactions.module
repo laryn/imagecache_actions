@@ -183,13 +183,13 @@ function imagecache_subroutine_form($action) {
   // List available presets
   $presets = array();
   foreach (imagecache_presets(TRUE) as $preset) {
-    $presets[$preset['presetid']] = $preset['presetname'];
+    $presets[$preset['presetname']] = $preset['presetname'];
   }
 
-  $form['subroutine_presetid'] = array(
+  $form['subroutine_presetname'] = array(
     '#type' => 'select',
     '#title' => t('Preset to call'),
-    '#default_value' => $action['subroutine_presetid'],
+    '#default_value' => $action['subroutine_presetname'],
     '#options' => $presets,
   );
 
@@ -207,7 +207,7 @@ function imagecache_subroutine_form($action) {
  * @param $action
  */
 function imagecache_subroutine_image(&$image, $data) {
-  if ($preset = imagecache_preset($data['subroutine_presetid'])) {
+  if ($preset = imagecache_preset_by_name($data['subroutine_presetname'])) {
     foreach ($preset['actions'] as $sub_action) {
       _imagecache_apply_action($sub_action, $image);
     }
@@ -221,8 +221,8 @@ function imagecache_subroutine_image(&$image, $data) {
  */
 function theme_imagecache_subroutine($element) {
   $data = $element['#value'];
-  if ($preset = imagecache_preset($data['subroutine_presetid'])) {
-    return t('%name (pid: !presetid)', array('%name' => $preset['presetname'], '!presetid' => $preset['subroutine_presetid']));
+  if ($preset = imagecache_preset_by_name($data['subroutine_presetname'])) {
+    return t('%name (pid: !presetid)', array('%name' => $preset['presetname'], '!presetid' => $preset['presetid']));
   }
   return t('<span class="error">Invalid reference. The referenced preset may have been deleted!</span>');
 }

@@ -619,7 +619,7 @@ function canvasactions_aspect_form($action) {
 
   $presets = array();
   foreach (imagecache_presets(TRUE) as $preset) {
-    $presets[$preset['presetid']] = $preset['presetname'];
+    $presets[$preset['presetname']] = $preset['presetname'];
   }
 
   $form['portrait'] = array(
@@ -664,7 +664,7 @@ function theme_canvasactions_aspect($element) {
   if ($action['ratio_adjustment'] != 1) {
     $ratio_adjustment = " (switch at 1:{$action['ratio_adjustment']})";
   }
-  return 'Portrait size: <strong>'. $presets[$action['portrait']]['presetname'] . '</strong>. Landscape size: <strong>'. $presets[$action['landscape']]['presetname'] .'</strong>'. $ratio_adjustment ;
+  return 'Portrait size: <strong>'. $action['portrait'] . '</strong>. Landscape size: <strong>'. $action['landscape'] .'</strong>'. $ratio_adjustment ;
 }
 
 /**
@@ -683,8 +683,8 @@ function canvasactions_aspect_image(&$image, $action = array()) {
   }
   $aspect = $image->info['width'] / $image->info['height'];
   // width / height * adjustment. If > 1, it's wide. 
-  $preset_id = (($aspect * $ratio_adjustment) > 1) ? $action['landscape'] : $action['portrait'];
-  $preset = imagecache_preset($preset_id);
+  $preset_name = (($aspect * $ratio_adjustment) > 1) ? $action['landscape'] : $action['portrait'];
+  $preset = imagecache_preset_by_name($preset_name);
 
   // Run the preset actions ourself. Cannot invoke a preset from the top as it handles filenames, not image objects.
   // ripped from imagecache_build_derivative()
