@@ -33,6 +33,7 @@ if (! function_exists('imagecache_actions_keyword_filter') ) {
  * @return a form definition
  */
 function canvasactions_definecanvas_form($action) {
+  module_load_include('inc', 'imagecache_actions', 'utility-color');
   if (imageapi_default_toolkit() != 'imageapi_gd') {
     drupal_set_message('Define Canvas not currently supported by using imagemagick. This effect requires GD image toolkit only.', 'warning');
   }

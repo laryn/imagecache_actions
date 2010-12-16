@@ -56,6 +56,9 @@ function imagecache_coloractions_imagecache_actions() {
   return $actions;
 }
 
+/**
+ * Display the settings for this action
+ */
 function imagecache_coloractions_theme() {
   return array(
     'imagecache_colorshift' => array(
@@ -87,17 +90,17 @@ function imagecache_colorshift_form($action) {
       'HEX' => '#FF0000',
     ),
   );
-  $action = array_merge($defaults, (array)$action);
+  $action = array_merge($defaults, (array) $action);
   $form = array('#theme' => 'imagecache_rgb_form');
   $form['RGB'] = imagecache_rgb_form($action['RGB']);
   $form['note'] = array('#value' => t("<p>
-    Note that colorshift is a mathematical filter that doesn't always 
-    have the expected result. 
-    To shift an image precisely TO a target color, 
+    Note that colorshift is a mathematical filter that doesn't always
+    have the expected result.
+    To shift an image precisely TO a target color,
     desaturate (greyscale) it before colorizing.
-    The hue (color wheel) is the <em>direction</em> the 
+    The hue (color wheel) is the <em>direction</em> the
     existing colors are shifted. The tone (inner box) is the amount.
-    Keep the tone half-way up the left site of the color box 
+    Keep the tone half-way up the left site of the color box
     for best results.
   </p>"));
   return $form;
@@ -122,7 +125,7 @@ function theme_imagecache_colorshift($element) {
  */
 function imagecache_colorshift_image(&$image, $data = array()) {
   // convert color from hex (as it is stored in the UI)
-  if($data['RGB']['HEX'] && $deduced = hex_to_rgb($data['RGB']['HEX'])) {
+  if ($data['RGB']['HEX'] && $deduced = hex_to_rgb($data['RGB']['HEX'])) {
     $data['RGB'] = array_merge($data['RGB'], $deduced);
   }
 
@@ -145,13 +148,13 @@ function imagecache_brightness_form($action) {
   $default = array('filter_arg1' => '100',);
   $action = array_merge($default, (array)$action);  
   $form = array();
-  $form['help'] = array( '#value' => t("The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark.") );
+  $form['help'] = array('#value' => t("The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark."));
   $form['filter_arg1'] = array(
     '#type' => 'textfield',
     '#title' => t('Brightness'),
     '#description' => t('-255 - +255'),
     '#default_value' => $action['filter_arg1'],
-    '#size' => 3
+    '#size' => 3,
   );
   return $form;
 }
@@ -215,7 +218,7 @@ function imagecache_inverse_image(&$image, $data = array()) {
 function imagecache_imagefilter($image, $data) {
   $funcname =  $image->toolkit . '_imagefilter';
   $success = $funcname($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL );
-  
+
   if (! $success) {
     watchdog('imagecache', 'imagecache_imagefilter failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
     return FALSE;
@@ -258,22 +261,22 @@ function imageapi_gd_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
 
 /**
  * Try to emulate some imagefilter actions with imagemagick.
- * 
+ *
  */
 function imageapi_imagemagick_imagefilter($image, $filter, $arg1, $arg2, $arg3) {
 
   switch ($filter) {
-    case 4 : # colorize
+    case 4: # colorize
       $R100 = round($arg1 / 255 * 100);
       $G100 = round($arg2 / 255 * 100);
       $B100 = round($arg3 / 255 * 100);
-      $image->ops[] = "-fill rgb\\($arg1,$arg2,$arg3\\) -colorize 50\\%"; 
+      $image->ops[] = "-fill rgb\\($arg1,$arg2,$arg3\\) -colorize 50\\%";
       return TRUE;
-    break; 
+      break;
   }
-  
+
   drupal_set_message("Imagefilter is only currently supported for GD toolkit. Code welcome.", 'error');
-  return FALSE;  
+  return FALSE;
 }
 
 /**
@@ -297,7 +300,7 @@ function imagecache_convert_form($action) {
       '#type' => 'select',
       '#default_value' => isset($action['format']) ? isset($action['format']) : 'image/png',
       '#options' => imagecache_file_formats(),
-    )
+    ),
   );
   return $form;
 }
@@ -307,7 +310,7 @@ function imagecache_convert_form($action) {
  */
 function theme_imagecache_convert($element) {
   $formats = imagecache_file_formats();
-  return t("Convert to") ." : ". $formats[$element['#value']['format']];
+  return t("Convert to") . " : " . $formats[$element['#value']['format']];
 }
 
 /**
