@@ -45,7 +45,7 @@ if (! function_exists('imageapi_image_overlay')) {
     $x = imagecache_actions_keyword_filter($x, $image->info['width'], $layer->info['width']);
     $y = imagecache_actions_keyword_filter($y, $image->info['height'], $layer->info['height']);
 
-    return image_toolkit_invoke('overlay', $image, array($layer, $x, $y, $alpha, $reverse));
+    return image_toolkit_invoke('overlay', array($image, $layer, $x, $y, $alpha, $reverse));
   }
 
   /**
