@@ -256,7 +256,7 @@ function imagecache_convert_form($action) {
     'format' => array(
       '#title' => t("File format"),
       '#type' => 'select',
-      '#default_value' => isset($action['format']) ? isset($action['format']) : 'image/png',
+      '#default_value' => isset($action['format']) ? $action['format'] : 'image/png',
       '#options' => imagecache_file_formats(),
     ),
   );
