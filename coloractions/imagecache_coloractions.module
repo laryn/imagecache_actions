@@ -188,8 +188,8 @@ function imageapi_gd_image_brightness(&$image, $data = array()) {
   return imagefilter($image->resource, 2, $data['filter_arg1']);
 }
 function imageapi_imagemagick_image_brightness(&$image, $data = array()) {
-  // TODO
-  return FALSE;
+  $image->ops[] = "-modulate " . (int)(100 + ( $data['filter_arg1'] / 128 * 100 ));
+  return TRUE;
 }
 
 /**
@@ -219,7 +219,7 @@ function imagecache_inverse_form($action) {
  * Process the imagecache action on the passed image
  */
 function imagecache_inverse_image(&$image, $data = array()) {
-  return imagecache_imagefilter($image, $data);
+  return imageapi_toolkit_invoke('inverse', $image, array($data));
 }
 
 /**

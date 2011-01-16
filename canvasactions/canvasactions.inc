@@ -244,7 +244,6 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
     imagesavealpha($image->resource, TRUE);
   }
   imagefilledrectangle($newcanvas, 0, 0, $targetsize['width'], $targetsize['height'], $background);
-#  imagealphablending($newcanvas, TRUE);
 
   if ($action['under']) {
     $canvas_object = (object) array(
@@ -273,38 +272,17 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
  * Patched with code at issue http://drupal.org/node/844386
  */
 function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
-
   $targetsize = $action['targetsize'];
-  $RGB = $action['RGB'];
-  $backgroundcolor = $RGB['HEX'] != '' ? '#'. $RGB['HEX'] : 'None';
-   
-  # TODO needs work.
-  #
-  $background = " -background '{$backgroundcolor}' ";
-  
-  $crop = " -size {$targetsize['width']}x{$targetsize['height']} ";
-  $offset = "";
+  $backgroundcolor = $action['RGB']['HEX'] != '' ? '#'. $action['RGB']['HEX'] : 'None';
+  $geometry = "";
   if ($targetsize['left'] || $targetsize['top']) {
     $offset = ($targetsize['left'] < 0 ? "-" : "+") . (int)$targetsize['left']
       . ($targetsize['top'] < 0 ? "-" : "+") . (int)$targetsize['top'];
+    $geometry = "-geometry $offset";
   }
-  $crop .= " -crop   '{$targetsize['width']}x{$targetsize['height']}{$offset}' ";
- 
-  $draw = " -draw '";
-  $draw .= " fill {$backgroundcolor} polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
-  $draw .= " ' ";
-  $draw .= " +repage ";
- 
-  $extent = " -extent '{$targetsize['width']}x{$targetsize['height']}$offset'";
+  $swap = ($action['under'] ? '+swap' : '');
 
-  if ($action['under']) {
-    $compose = " $background $crop $extent ";
-  } 
-  else {
-    $compose = " $background $crop $draw ";
-  }
-  #dpm(get_defined_vars());
-
+  $compose = "  \\( -size {$targetsize['width']}x{$targetsize['height']} xc:$backgroundcolor \\) $geometry $swap -composite  ";
   $image->ops[] = $compose;
   return TRUE; 
 }
