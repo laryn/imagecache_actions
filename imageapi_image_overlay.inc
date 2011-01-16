@@ -140,7 +140,7 @@ if (! function_exists('imageapi_image_overlay')) {
     // Bloody libraries - I tried  [6.2.8 06/11/08] because thats what I could get for my distro.
     // [6.4.5 2009-06-04] (todays latest via ubuntu) is just as bad.
 
-    // arguments require a + in front, unless they are negative.
+    // Arguments require a + in front, unless they are negative.
     if ($x >= 0) {
       $x = "+$x";
     }
@@ -176,9 +176,6 @@ if (! function_exists('imageapi_image_overlay')) {
       $layer->ops = array_merge($layer->ops, $image->ops);
       $layer->info = $image->info;
     }
-
-    # This also worked (no alpha)
-    #  $image->ops[] = " -draw \"image over {$x},{$y} 0,0 {$layer_filepath}\""  ;
 
     // TODO - I may end up with a different sized image from doing this?
     // How to let the object know?

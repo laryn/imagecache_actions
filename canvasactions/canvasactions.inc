@@ -276,19 +276,6 @@ function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
 
   $targetsize = $action['targetsize'];
   $RGB = $action['RGB'];
-
-
-/*
-  $crop = " -size {$targetsize['width']}x{$targetsize['height']} " .
-    "xc:'#{$RGB['HEX']}' -crop '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
-  $draw .= " -composite ";
-
-  $compose = " $crop $draw ";
-#  $image->ops[] = $compose;
-  return TRUE; 
-  */
-  
-
   $backgroundcolor = $RGB['HEX'] != '' ? '#'. $RGB['HEX'] : 'None';
    
   # TODO needs work.
