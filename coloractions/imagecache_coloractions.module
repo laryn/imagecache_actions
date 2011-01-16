@@ -259,6 +259,15 @@ function imagecache_convert_form($action) {
       '#default_value' => isset($action['format']) ? $action['format'] : 'image/png',
       '#options' => imagecache_file_formats(),
     ),
+    'quality' => array(
+      '#type' => 'textfield',
+      '#title' => t('JPEG quality'),
+      '#description' => t('Define the image quality for JPEG manipulations only. Ranges from 0 to 100. Higher values mean better image quality, but bigger files.<br /><strong>Has no effect if jpg is not selected.</strong>'),
+      '#size' => 10,
+      '#maxlength' => 3,
+      '#default_value' => isset($action['quality']) ? $action['quality'] : '75',
+      '#field_suffix' => '%',
+    ),
   );
   return $form;
 }
@@ -267,8 +276,17 @@ function imagecache_convert_form($action) {
  * Implementation of theme_hook() for imagecache_ui.module
  */
 function theme_imagecache_convert($element) {
+  $data = $element['#value'];
   $formats = imagecache_file_formats();
-  return t("Convert to") . " : " . $formats[$element['#value']['format']];
+  if ($formats[$data['format']] == 'jpg') {
+    return t('Convert to: @format, quality: @quality%', array(
+    '@format' => $formats[$data['format']],
+    '@quality' => $data['quality']
+    ));
+  } 
+  else { 
+    return t("Convert to") .": ". $formats[$data['format']]; 
+  }
 }
 
 /**
@@ -280,6 +298,7 @@ function imagecache_convert_image(&$image, $data = array()) {
   $formats = imagecache_file_formats();
   $image->info['mime_type'] = $data['format'];
   $image->info['extension'] = $formats[$data['format']];
+  $image->quality = $data['quality'];
   return TRUE;
 }
 
