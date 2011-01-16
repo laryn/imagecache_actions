@@ -5,4 +5,9 @@ dependencies[] = imagecache
 package = ImageCache
 core = 6.x
 
+features[imagecache][] = 'default'
+features[imagecache][] = 'scale'
 features[imagecache][] = 'corners_combo'
+features[imagecache][] = 'relative_canvas'
+features[imagecache][] = 'scale_canvas'
+features[imagecache][] = 'scale_rotate'

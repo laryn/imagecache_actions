@@ -45,7 +45,7 @@ if (! function_exists('imageapi_image_overlay')) {
     $x = imagecache_actions_keyword_filter($x, $image->info['width'], $layer->info['width']);
     $y = imagecache_actions_keyword_filter($y, $image->info['height'], $layer->info['height']);
 
-    return image_toolkit_invoke('overlay', array($image, $layer, $x, $y, $alpha, $reverse));
+    return imageapi_toolkit_invoke('overlay', $image, array($layer, $x, $y, $alpha, $reverse));
   }
 
   /**
@@ -81,10 +81,10 @@ if (! function_exists('imageapi_image_overlay')) {
    * to replace the old image resource with the new one.
    * @return bool success
    */
-  function image_gd_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
+  function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
     if (empty($layer->resource)) {
       trigger_error("Invalid input to " . __FUNCTION__ . " 'layer' is not a valid resource");
-      #dpm($layer);
+      #dpm($layer); dpm(debug_backtrace());
       return FALSE;
     }
     // If the given alpha is 100%, we can use imagecopy - which actually works,
@@ -124,6 +124,7 @@ if (! function_exists('imageapi_image_overlay')) {
    * versions distributed on hosted servers (if any) are often several years
    * behind. Using the latest imagemagick release features will make this function
    * unusable in real deployments.
+   * I've now spent DAYS testing different versions.
    *
    * @param $image
    *   Base imageapi object.
@@ -131,11 +132,13 @@ if (! function_exists('imageapi_image_overlay')) {
    *   May be a filename or an imageAPI object, gets placed on top
    *   If using reverse, this is going to be the result we carry on working with.
    */
-  function image_imagemagick_overlay(&$image, &$layer, $x = 0, $y = 0, $alpha = 100, $reverse = FALSE) {
+  function imageapi_imagemagick_image_overlay(&$image, &$layer, $x = 0, $y = 0, $alpha = 100, $reverse = FALSE) {
 
+    $layer_filepath = $layer->source;
     # TODO - alpha channels
     # I spent ages on the docs, but it appears my version of convert does not support -merge, -watermark or -dissolve
     // Bloody libraries - I tried  [6.2.8 06/11/08] because thats what I could get for my distro.
+    // [6.4.5 2009-06-04] (todays latest via ubuntu) is just as bad.
 
     // arguments require a + in front, unless they are negative.
     if ($x >= 0) {
@@ -147,34 +150,39 @@ if (! function_exists('imageapi_image_overlay')) {
     $geometry_arg = " -geometry $x$y ";
     $compose_arg = " ";
     $alpha_arg = " ";
+    $source_image = "'$layer_filepath'";
 
     if ($alpha != 100) {
-      $alpha_arg = " -set \"option:compose:args\" $alpha ";
+      // Can't get this to work as documented
+      // http://www.imagemagick.org/Usage/compose/#dissolve
+      #$alpha_arg = " -compose dissolve -set \"option:compose:args\" $alpha,100 ";
+      #$alpha_arg = " -compose dissolve -define compose:args=$alpha,100 ";
+
+      // Instead do an incredibly convoluted work-around!!
+      // Set the alpha transparency on the overlay image itself before blending
+      // Uses a preliminary sub-process to change the overlay image first.
+      $source_image = "\\( '$layer_filepath' -channel Opacity -evaluate Multiply " . ($alpha/100) . " \\)";
     }
 
-    // Normal, second image goes on top of the first
+    // Normally, second image goes on top of the first. Simple
     if (!$reverse) {
-      $layer_filepath = $layer->source;
-      $image->ops[] = "  \"$layer_filepath\" $geometry_arg $compose_arg $alpha_arg  -composite ";
+      $image->ops[] = "  $source_image $geometry_arg $compose_arg -composite ";
     }
     else {
       // If in reverse, we cannot stop the first image from being the
       // first in the imagemagick queue. the +swap argument seems to be what we need.
-      $layer_filepath = $image->source;
       $compose_arg = ' +swap';
-      $image->ops[] = "  \"$layer_filepath\" $geometry_arg $compose_arg $alpha_arg  -composite ";
+      $image->ops[] = "  $source_image $geometry_arg $compose_arg -composite ";
       $layer->ops = array_merge($layer->ops, $image->ops);
       $layer->info = $image->info;
     }
 
-    #  watchdog('imagecache_canvas', print_r($image->ops, 1) );
-    # This also worked
-    #  $image->ops[] = ' -draw "image over {$x},{$y} 0,0 \'{$layer_filepath}\'"'  ;
+    # This also worked (no alpha)
+    #  $image->ops[] = " -draw \"image over {$x},{$y} 0,0 {$layer_filepath}\""  ;
 
     // TODO - I may end up with a different sized image from doing this?
     // How to let the object know?
     #dpm(get_defined_vars());
     return TRUE;
   }
-
 }

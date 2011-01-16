@@ -190,7 +190,7 @@ function png_color2alpha(&$image, $color, $opacity = NULL) {
     watchdog('imagecache_actions', __FUNCTION__ . " on {$image->source}. Image is TOO BIG to run the per-pixel algorithm. Aborting.");  
     return TRUE;
   }
-dpm(get_defined_vars());
+
   for ($i = 0; $i < $height; $i++) { //this loop traverses each row in the image
     for ($j = 0; $j < $width; $j++) { //this loop traverses each pixel of each row
 
@@ -221,4 +221,3 @@ dpm(get_defined_vars());
   }
   return TRUE;
 }
-

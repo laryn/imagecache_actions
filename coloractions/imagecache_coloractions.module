@@ -238,65 +238,6 @@ function imageapi_imagemagick_image_inverse(&$image, $data = array()) {
 
 
 /**
- * Stub for the image toolkit.
- *
- * Used by brightness and colorize
- *
- * TODO: other toolkits unimplimented yet.
- * Just forward the job to gdtoolkit for
- * now
- *
- * @param $image handle on the image definition, including a gd image resource
- * to act upon
- * @param $data settings for this process.
- * @return bool success
- */
-function imagecache_imagefilter($image, $data) {
-  $funcname =  $image->toolkit . '_imagefilter';
-  $success = $funcname($image, $data['filter'], $data['filter_arg1'], isset($data['filter_arg2']) ? $data['filter_arg2'] : NULL, isset($data['filter_arg3']) ? $data['filter_arg3'] : NULL );
-
-  if (! $success) {
-    watchdog('imagecache', 'imagecache_imagefilter failed. image: %image, data: %data.', array('%path' => $image, '%data' => print_r($data, TRUE)), WATCHDOG_ERROR);
-    return FALSE;
-  }
-  return TRUE;
-}
-
-/**
- * Attempt to run imagefilter, which may or may not be included with your
- * gdtoolkit. If it isn't, a local script is used to emulate the simpler of its
- * functions.
- */
-function imageapi_gd_imagefilter($image, $filter, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL) {
-
-  // Some distros that allegedly include PHP5 GD2 are faulty.
-  // imageapi is providing a fallback library we will use
-  if (!function_exists('imagefilter')) {
-    require_once drupal_get_path('module', 'imageapi_gd') .'/imagefilter.inc';
-  }
-
-  $info = $image->info;
-  if (!$info) {
-    return FALSE;
-  }
-
-  imagesavealpha($image->resource, TRUE);
-
-  # This is a bit silly really, php internals complain if it's given TOO MANY args!
-  # Should refactor this and not be so lazy.
-  if (!is_null($arg2) && !is_null($arg3)) {
-    return imagefilter($image->resource, $filter, $arg1, $arg2, $arg3);
-  }
-  else if (!is_null($arg2) && is_null($arg3)) {
-    return imagefilter($image->resource, $filter, $arg1, $arg2);
-  }
-  else if (is_null($arg2) && is_null($arg3)) {
-    return imagefilter($image->resource, $filter, $arg1);
-  }
-}
-
-
-/**
  * Implementation of imagecache_hook_form()
  *
  * @param $action array of settings for this action

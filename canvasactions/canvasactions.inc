@@ -186,7 +186,7 @@ function theme_canvasactions_definecanvas($element) {
 function canvasactions_definecanvas_image(&$image, $action = array()) {
  
   // May be given either exact or relative dimensions.
-  if ($action['exact']['width'] || $action['exact']['width']) {
+  if ($action['exact']['width'] || $action['exact']['height']) {
   // Allows only one dimension to be used if the other is unset.
     if (! $action['exact']['width']) $action['exact']['width'] = $image->info['width'];
     if (! $action['exact']['height']) $action['exact']['height'] = $image->info['height'];
@@ -196,7 +196,6 @@ function canvasactions_definecanvas_image(&$image, $action = array()) {
 
     $targetsize['left'] = _imagecache_keyword_filter($action['exact']['xpos'], $targetsize['width'], $image->info['width']);
     $targetsize['top'] = _imagecache_keyword_filter($action['exact']['ypos'], $targetsize['height'], $image->info['height']);
-
   }
   else {
     // calculate relative size
@@ -274,22 +273,42 @@ function imageapi_gd_image_definecanvas(&$image, $action = array()) {
  * Patched with code at issue http://drupal.org/node/844386
  */
 function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
+
   $targetsize = $action['targetsize'];
   $RGB = $action['RGB'];
+
+
+/*
+  $crop = " -size {$targetsize['width']}x{$targetsize['height']} " .
+    "xc:'#{$RGB['HEX']}' -crop '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
+  $draw .= " -composite ";
+
+  $compose = " $crop $draw ";
+#  $image->ops[] = $compose;
+  return TRUE; 
+  */
+  
+
   $backgroundcolor = $RGB['HEX'] != '' ? '#'. $RGB['HEX'] : 'None';
    
-   # TODO needs work.
-   #
+  # TODO needs work.
+  #
   $background = " -background '{$backgroundcolor}' ";
   
-  $crop = " -crop   '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!' ";
+  $crop = " -size {$targetsize['width']}x{$targetsize['height']} ";
+  $offset = "";
+  if ($targetsize['left'] || $targetsize['top']) {
+    $offset = ($targetsize['left'] < 0 ? "-" : "+") . (int)$targetsize['left']
+      . ($targetsize['top'] < 0 ? "-" : "+") . (int)$targetsize['top'];
+  }
+  $crop .= " -crop   '{$targetsize['width']}x{$targetsize['height']}{$offset}' ";
  
   $draw = " -draw '";
-  $draw .= " fill '{$RGB['HEX']}' polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
+  $draw .= " fill {$backgroundcolor} polygon 0,0 {$targetsize['width']},0 {$targetsize['width']},{$targetsize['height']} 0,{$targetsize['height']} ";
   $draw .= " ' ";
   $draw .= " +repage ";
  
-  $extent = " -extent '{$targetsize['width']}x{$targetsize['height']}-{$targetsize['left']}-{$targetsize['top']}!'";
+  $extent = " -extent '{$targetsize['width']}x{$targetsize['height']}$offset'";
 
   if ($action['under']) {
     $compose = " $background $crop $extent ";
@@ -297,6 +316,7 @@ function imageapi_imagemagick_image_definecanvas(&$image, $action = array()) {
   else {
     $compose = " $background $crop $draw ";
   }
+  #dpm(get_defined_vars());
 
   $image->ops[] = $compose;
   return TRUE; 
@@ -393,7 +413,7 @@ function canvasactions_canvas2file_image(&$image, $action = array()) {
   // starting the merge. The built-in imagecopymerge, and the watermark library both do not
   // allow overlays to be bigger than the target.
   // Adjust size
-  $crop_rules = array('xoffset' => 0, 'yoffset' => 0, );
+  $crop_rules = array('left' => 0, 'top' => 0, );
   if (empty($action['dimensions'])) $action['dimensions'] = 'original';
   switch ($action['dimensions']) {
     case 'original' :
