@@ -131,7 +131,7 @@ function imageapi_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse
   $x = imagecache_actions_keyword_filter($x, $image->info['width'], $layer->info['width']);
   $y = imagecache_actions_keyword_filter($y, $image->info['height'], $layer->info['height']);
 
-  return imageapi_toolkit_invoke('overlay', $image, array($layer, $x, $y, $alpha, $reverse));
+  return imageapi_toolkit_invoke('overlay', $image, array(&$layer, $x, $y, $alpha, $reverse));
 }
 
 /**
