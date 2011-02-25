@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file Helper functions for imagecache_textactions
  * 

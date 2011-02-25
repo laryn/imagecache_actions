@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file Third-party library to assist image blending on older GD toolkits
  */
