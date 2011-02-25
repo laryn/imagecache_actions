@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function imagecache_textactions_install() {
   if (function_exists('imagecache_action_definitions')) {
