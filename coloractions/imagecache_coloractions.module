@@ -154,8 +154,8 @@ function imageapi_imagemagick_image_colorshift(&$image, $data = array()) {
  * @return a form definition
  */
 function imagecache_brightness_form($action) {
-  $default = array('filter_arg1' => '100',);
-  $action = array_merge($default, (array)$action);  
+  $default = array('filter_arg1' => '100');
+  $action = array_merge($default, (array) $action);
   $form = array();
   $form['help'] = array('#value' => t("The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark."));
   $form['filter_arg1'] = array(
@@ -195,7 +195,7 @@ function imageapi_imagemagick_image_brightness(&$image, $data = array()) {
  * Implementation of theme_hook() for imagecache_ui.module
  */
 function theme_imagecache_brightness($element) {
-  return t("Adjust") ." : ". $element['#value']['filter_arg1'];
+  return t("Adjust") . " : " . $element['#value']['filter_arg1'];
 }
 
 
@@ -235,7 +235,6 @@ function imageapi_imagemagick_image_inverse(&$image, $data = array()) {
   return FALSE;
 }
 
-
 /**
  * Implementation of imagecache_hook_form()
  *
@@ -243,6 +242,9 @@ function imageapi_imagemagick_image_inverse(&$image, $data = array()) {
  * @return a form definition
  */
 function imagecache_convert_form($action) {
+  if (image_get_toolkit() === 'imageapi_imagemagick') {
+    drupal_set_message('When using imagemagick, convert format must be the last effect. If not, results will be unpredictable.', 'warning');
+  }
   $form = array(
     'help' => array(
       '#type' => 'markup',
