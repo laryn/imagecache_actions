@@ -5,12 +5,14 @@
  * Additional actions for imagecache processing.
  *
  * Exposes some of the simpler PHP 'imagefilter' actions (colorshift,
- * brightness, negative)
+ * brightness, negative) and provides some more expensive color manipulation
+ * tools akin to Photoshop or Gimp (Overlay)
  * -  A transparency masker for merging with backgrounds.
  * -  A pseudo - file conversion feature.
  *
  *
  * @author dan http://coders.co.nz
+ * @author sydneyshan http://enigmadigital.net.au
  */
 
 // During devel, caching is pointless. Flush it
@@ -32,6 +34,10 @@ function imagecache_coloractions_imagecache_actions() {
     'imagecache_colorshift' => array(
       'name' => 'Color Shift',
       'description' => 'Adjust image colors.',
+    ),
+    'imagecache_coloroverlay' => array(
+      'name' => 'Color Overlay',
+      'description' => 'Apply a color tint to an image (retaining blacks and whites).',
     ),
     'imagecache_brightness' => array(
       'name' => 'Brightness',
@@ -60,6 +66,9 @@ function imagecache_coloractions_imagecache_actions() {
 function imagecache_coloractions_theme() {
   return array(
     'imagecache_colorshift' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'imagecache_coloroverlay' => array(
       'arguments' => array('element' => NULL),
     ),
     'imagecache_alpha' => array(
@@ -144,6 +153,107 @@ function imageapi_imagemagick_image_colorshift(&$image, $data = array()) {
   $image->ops[] = "-fill rgb\\({$RGB['red']},{$RGB['green']},{$RGB['blue']}\\) -colorize 50\\%";
   return TRUE;
 }
+
+
+/**
+ * Implementation of imagecache_hook_form()
+ *
+ * Settings for coloroverlay actions.
+ *
+ * @param $action array of settings for this action
+ * @return a form definition
+ */
+function imagecache_coloroverlay_form($action) {
+  $defaults = array(
+    'RGB' => array(
+      'HEX' => '#E2DB6A',
+    ),
+  );
+  $action = array_merge($defaults, (array) $action);
+  $form = array('#theme' => 'imagecache_rgb_form');
+  $form['RGB'] = imagecache_rgb_form($action['RGB']);
+  $form['note'] = array('#value' => t("<p>
+    Note that color overlay is a mathematical filter that doesn't always
+    have the expected result.
+    To shift an image precisely TO a target color,
+    desaturate (greyscale) it before colorizing.
+    The hue (color wheel) is the <em>direction</em> the
+    existing colors are shifted. The tone (inner box) is the amount.
+    Keep the tone half-way up the left site of the color box
+    for best results.
+  </p>"));
+  return $form;
+}
+
+
+/**
+ * Implementation of theme_hook() for imagecache_ui.module
+ */
+function theme_imagecache_coloroverlay($element) {
+  $action = $element['#value'];
+  return theme_imagecacheactions_rgb($action['RGB']);
+}
+
+
+/**
+ * Implementation of hook_image()
+ *
+ * Process the imagecache action on the passed image
+ *
+ * Just converts and passes the vals to the all-purpose 'filter' action
+ */
+function imagecache_coloroverlay_image(&$image, $data = array()) {
+  // convert color from hex (as it is stored in the UI)
+  if ($data['RGB']['HEX'] && $deduced = hex_to_rgb($data['RGB']['HEX'])) {
+    $data['RGB'] = array_merge($data['RGB'], $deduced);
+  }
+  return imageapi_toolkit_invoke('coloroverlay', $image, array($data));
+}
+
+/**
+ * Implementation of hook_{toolkit}_image()
+ */
+function imageapi_gd_image_coloroverlay(&$image, $data = array()) {
+  $RGB = $data['RGB'];
+  	
+	$w = $image->info['width'];
+	$h = $image->info['height'];
+	
+	for($y=0;$y<$h;$y++) {
+    for($x=0;$x<$w;$x++) {
+    	$rgb = imagecolorat($image->resource, $x, $y);
+      $source = imagecolorsforindex($image->resource, $rgb);
+
+			if($source['red'] <= 128){
+				$final_r = (2 * $source['red'] * $RGB['red'])/256;
+      }else{
+        $final_r = 255 - (((255 - (2 * ($source['red'] - 128))) * (255 - $RGB['red']))/256);
+      }
+      if($source['green'] <= 128){
+				$final_g = (2 * $source['green'] * $RGB['green'])/256;
+			}else{
+				$final_g = 255 - (((255 - (2 * ($source['green'] - 128))) * (255 - $RGB['green']))/256);
+			}
+			if($source['blue'] <= 128){
+				$final_b = (2 * $source['blue'] * $RGB['blue'])/256;
+			}else{
+				$final_b = 255 - (((255 - (2 * ($source['blue'] - 128))) * (255 - $RGB['blue']))/256);
+			}
+			$final_colour = imagecolorallocatealpha($image->resource, $final_r, $final_g, $final_b, $source['alpha']);
+			imagesetpixel($image->resource, $x, $y, $final_colour);
+		}
+	}
+  
+  return TRUE;
+}
+function imageapi_imagemagick_image_coloroverlay(&$image, $data = array()) {
+  $RGB = $data['RGB'];
+  $image->ops[] = "\\( +clone +matte -fill rgb\\({$RGB['red']},{$RGB['green']},{$RGB['blue']}\\) -colorize 100% +clone +swap -compose overlay -composite \\) -compose SrcIn -composite";
+  
+  return TRUE;
+}
+
+
 
 /**
  * Implementation of imagecache_hook_form()
