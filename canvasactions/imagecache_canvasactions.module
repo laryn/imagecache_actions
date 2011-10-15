@@ -61,6 +61,11 @@ function imagecache_canvasactions_imagecache_actions() {
       'description' => t('Define the size of the working canvas and background color, this controls the dimensions of the output image..'),
       'file' => 'canvasactions.inc',
     ),
+    'canvasactions_imagemask' => array(
+      'name' => t('Image mask'),
+      'description' => t(' Choose the file image you wish to use as a mask, and apply it to the canvas.'),
+      'file' => 'canvasactions.inc',
+    ),
     'canvasactions_file2canvas' => array(
       'name' => t('Overlay (watermark)'),
       'description' => t(' Choose the file image you wish to use as an overlay, and position it in a layer on top of the canvas.'),
@@ -105,6 +110,10 @@ function imagecache_canvasactions_theme() {
   $util_dir = drupal_get_path('module', 'imagecache_actions');
   return array(
     'canvasactions_definecanvas' => array(
+      'file'      => 'canvasactions.inc',
+      'arguments' => array('element' => NULL),
+    ),
+    'canvasactions_imagemask' => array(
       'file'      => 'canvasactions.inc',
       'arguments' => array('element' => NULL),
     ),
