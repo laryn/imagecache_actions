@@ -32,7 +32,7 @@ function imagecache_rgb_form($action) {
 /**
  * Render the subform in a table
  */
-function theme_imagecacheactions_rgb_form(&$form) {
+function theme_imagecacheactions_rgb_form($form) {
   // Add a farb element
   drupal_add_css('misc/farbtastic/farbtastic.css', 'module', 'all', FALSE);
   drupal_add_js('misc/farbtastic/farbtastic.js');
