@@ -31,7 +31,7 @@ if (! function_exists('imageapi_image_overlay')) {
    *
    * @ingroup imageapi
    */
-  function imageapi_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
+  function imageapi_image_overlay($image, $layer, $x, $y, $alpha = 100, $reverse = FALSE) {
     if (is_string($layer) ) {
       if (! file_exists($layer)) {
         trigger_error("Image file does not exist. Attempted to overlay $layer", E_USER_ERROR);
@@ -80,7 +80,7 @@ if (! function_exists('imageapi_image_overlay')) {
    * to replace the old image resource with the new one.
    * @return bool success
    */
-  function imageapi_gd_image_overlay(&$image, &$layer, $x, $y, $alpha = 100, $reverse = FALSE) {
+  function imageapi_gd_image_overlay($image, $layer, $x, $y, $alpha = 100, $reverse = FALSE) {
     if (empty($layer->resource)) {
       trigger_error("Invalid input to " . __FUNCTION__ . " 'layer' is not a valid resource");
       #dpm($layer); dpm(debug_backtrace());
