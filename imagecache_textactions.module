@@ -6,7 +6,6 @@
  * from http://drupal.org/node/264862#comment-865490 by patrickharris
  * 
  */
-  cache_clear_all('imagecache_actions', 'cache');
 
 require_once(dirname(__FILE__) .'/utility.inc'); // For simple color routines
 
